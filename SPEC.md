@@ -83,7 +83,7 @@ Testes de colisão serão feitos para verificar se uma pokebola atingiu um pokem
 Haverão objetos com sombras, como por exemplo as árvores, e ao ocorrer a captura de um pokémon, será emitida luz da pokébola, que por alguns instantes iluminará objetos próximos. Na imagem 2 é possível observar a sombra de uma árvore. Na imagem 3 é possível observar a captura de um pokémon, que em nossa versão será acompanhada por um momento de brilho da pokebola.
 
 ### Mapeamento de texturas em todos os objetos
-Texturas são adicionadas a todos os objetos. O que inclui a pokebola, o personagem do usuário, os pokemons, o solo, e outros objetos do cenário.
+Texturas serão adicionadas a todos os objetos. O que inclui a pokebola, o personagem do usuário, os pokemons, o solo, e outros objetos do cenário.
 
 ### Movimentação com curva Bézier cúbica
 <mark>`<preencher>`</mark>
