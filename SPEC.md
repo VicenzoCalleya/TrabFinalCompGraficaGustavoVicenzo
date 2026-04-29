@@ -14,7 +14,7 @@
 
 ## Detalhes do que será implementado
 
-- **Título do trabalho**: <mark>`<preencher>`</mark>
+- **Título do trabalho**: Pokémon Legends Arceus, Simplificado
 - **Parágrafo curto descrevendo o que será implementado**: <mark>`<preencher>`</mark>
 
 ## Especificação visual
