@@ -15,7 +15,7 @@
 ## Detalhes do que será implementado
 
 - **Título do trabalho**: Pokémon Legends Arceus, Simplificado
-- **Parágrafo curto descrevendo o que será implementado**: <mark>`<preencher>`</mark>
+- **Parágrafo curto descrevendo o que será implementado**: Iremos fazer uma cópia básica do famoso jogo "Pokémon Legends Arceus", ao invés de nos concentrarmos na parte de batalha porém, iremos nos focar na exploração de parte do mapa e na captura de pokémons. Essas capturas são feitas por meio de pokebolas, em que o usuário terá que aremessar nos pokémons para ter uma chance de capturá-los.
 
 ## Especificação visual
 
