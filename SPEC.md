@@ -6,8 +6,8 @@
 
 ## Integrantes da dupla
 
-- **Aluno 1 - Nome**: <mark>`<preencher>`</mark>
-- **Aluno 1 - Cartão UFRGS**: <mark>`<preencher>`</mark>
+- **Aluno 1 - Nome**: Vicenzo Lamberti Calleya
+- **Aluno 1 - Cartão UFRGS**: 589370
 
 - **Aluno 2 - Nome**: <mark>`<preencher>`</mark>
 - **Aluno 2 - Cartão UFRGS**: <mark>`<preencher>`</mark>
