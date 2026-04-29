@@ -86,7 +86,7 @@ Haverão objetos com sombras, como por exemplo as árvores, e ao ocorrer a captu
 Texturas serão adicionadas a todos os objetos. O que inclui a pokebola, o personagem do usuário, os pokemons, o solo, e outros objetos do cenário.
 
 ### Movimentação com curva Bézier cúbica
-<mark>`<preencher>`</mark>
+A trajetória da movimentação dos pokémons será marcada principalmente por curvas Bézier cúbicas. O objetivo disso é fazer com que sua movimentação parece mais natural e selvagem, ao invés de andar apenas em linhas retas.
 
 ### Animações baseadas no tempo ($\Delta t$)
 <mark>`<preencher>`</mark>
