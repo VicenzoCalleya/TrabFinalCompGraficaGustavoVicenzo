@@ -77,7 +77,7 @@ Haverá várias instâncias de objetos, principalmente relacionadas com o cenár
 Testes de colisão serão feitos para verificar se uma pokebola atingiu um pokemon (ou o chão, caso ele tenha errado). Além disso, também será verificado se o jogador bateu com uma árvore, ou outro objeto pelo cenário.
 
 ### Modelos de Iluminação em todos os objetos
-<mark>`<preencher>`</mark>
+Haverão objetos com sombras, como por exemplo as árvores, e ao ocorrer a captura de um pokémon, será emitida luz da pokébola, que por alguns instantes iluminará os objetos próximos.
 
 ### Mapeamento de texturas em todos os objetos
 <mark>`<preencher>`</mark>
