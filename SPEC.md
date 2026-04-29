@@ -90,6 +90,14 @@ Será introduzido o modelo do personagem controlado pelo usuário, formado por u
 
 ## Limitações esperadas
 
+Não faremos a interface do jogo.
+Pelo foco em computação gráfica.
+
+Não faremos gráficos tão bonitos quanto os do jogo original.
+Pois para os fins dessa atividade acreditamos que algo do nível de uma grande empresa não se
+vê necessário.
+
+
 > [!IMPORTANT]
 > - Coloque aqui uma lista de detalhes visuais ou de interação que
 >   aparecem no vídeo e/ou imagens acima, mas que você **não pretende
