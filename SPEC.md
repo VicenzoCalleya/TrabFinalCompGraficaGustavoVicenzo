@@ -71,7 +71,7 @@ Será introduzido o modelo do personagem controlado pelo usuário, formado por u
 O usuário irá conseguir mover o personagem pelo mapa, com o personagem se rotacionando e se virando para a direção que o usuário pedir. Além disso, o usuário pode jogar uma pokebola, que embora o jogador não possa controlar totalmente sua trajetória, ele controla os parâmetros iniciais
 
 ### Diferentes tipos de câmeras
-Vai existir uma câmera em que o usuário vê seu personagem em terceira pessoa. Outra que vai existir é uma câmera de mira, onde haverá zoom e um foco centralizado em onde o usuário estiver mirando. Como pode ser observado na imagem 1 e 2.
+Vai existir uma câmera em que o usuário vê seu personagem em terceira pessoa. Como também existirá uma câmera de mira, onde haverá zoom e um foco centralizado em onde o usuário estiver mirando. Isso pode ser observado na imagem 1 e 2.
 
 ### Instâncias de objetos
 Haverá várias instâncias de objetos, principalmente relacionadas com o cenário. Múltiplos objetos com o mesmo modelo incluem: Árvores, Grama alta, alguns pokémons, etc.
