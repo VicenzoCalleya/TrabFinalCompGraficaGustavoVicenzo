@@ -53,8 +53,11 @@ https://youtu.be/4iG_2mQbHQg
 >   irá usar como ilustração para as explicações que vêm abaixo.
 
 <img width="1360" height="768" alt="image" src="https://github.com/user-attachments/assets/90c8881e-bab4-4268-a7a1-5c4cd4b7630d" />
+Imagem 1
 <img width="1360" height="768" alt="image" src="https://github.com/user-attachments/assets/3ba3f3de-343d-461c-a51c-d28fcdf00121" />
+Imagem 2
 <img width="1360" height="768" alt="image" src="https://github.com/user-attachments/assets/a56e24a0-a115-45b2-8103-783cab001f83" />
+Imagem 3
 
 
 ## Especificação textual
@@ -68,7 +71,7 @@ Será introduzido o modelo do personagem controlado pelo usuário, formado por u
 O usuário irá conseguir mover o personagem pelo mapa, com o personagem se rotacionando e se virando para a direção que o usuário pedir. Além disso, o usuário pode jogar uma pokebola, que embora o jogador não possa controlar totalmente sua trajetória, ele controla os parâmetros iniciais
 
 ### Diferentes tipos de câmeras
-Vai existir uma câmera em que o usuário vê seu personagem em terceira pessoa. Outra que vai existir é uma câmera de mira, onde haverá zoom e um foco centralizado em onde o usuário estiver mirando.
+Vai existir uma câmera em que o usuário vê seu personagem em terceira pessoa. Outra que vai existir é uma câmera de mira, onde haverá zoom e um foco centralizado em onde o usuário estiver mirando. Como pode ser observado na imagem 1 e 2.
 
 ### Instâncias de objetos
 Haverá várias instâncias de objetos, principalmente relacionadas com o cenário. Múltiplos objetos com o mesmo modelo incluem: Árvores, Grama alta, alguns pokémons, etc.
