@@ -103,7 +103,7 @@ Quando a pokebola é aremessada, será realizada uma animação baseada em tempo
 
 Não faremos a interface do jogo, pelo foco em computação gráfica. Além disso, são muitas informações que não são utilizadas, como por exemplo o tipo de pokebola que você vai utilizar.
 
-Não adicionaremos animações como os pokemons se mexendo de maneira fluida. Isso consumiria muito tempo e fugiria do escopo da disciplina de computação gráfica.
+Não adicionaremos animações fluidas, como grama alta se movendo com o vento, pokemons fazendo suas movimentos padrões e o personagem do jogador se movendo com naturalidade. Isso consumiria muito tempo e fugiria do escopo da disciplina de computação gráfica.
 
 Não faremos gráficos tão bonitos quanto os do jogo original, pois para os fins dessa atividade acreditamos que algo do nível de uma grande empresa não se
 vê necessário.
