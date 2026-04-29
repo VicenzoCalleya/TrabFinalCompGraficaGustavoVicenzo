@@ -77,10 +77,10 @@ Vai existir uma câmera em que o usuário vê seu personagem em terceira pessoa.
 Haverá várias instâncias de objetos, principalmente relacionadas com o cenário. Múltiplos objetos com o mesmo modelo incluem: Árvores, Grama alta, alguns pokémons, etc.
 
 ### Testes de intersecção
-Testes de colisão serão feitos para verificar se uma pokebola atingiu um pokemon (ou o chão, caso ele tenha errado). Além disso, também será verificado se o jogador bateu com uma árvore, ou outro objeto pelo cenário.
+Testes de colisão serão feitos para verificar se uma pokebola atingiu um pokemon (ou o chão, caso ele tenha errado). Além disso, também será verificado se o jogador bateu com uma árvore, ou outro objeto pelo cenário. O momento da colisão entre um pokémon e uma pokebola pode ser observado na imagem 3.
 
 ### Modelos de Iluminação em todos os objetos
-Haverão objetos com sombras, como por exemplo as árvores, e ao ocorrer a captura de um pokémon, será emitida luz da pokébola, que por alguns instantes iluminará os objetos próximos.
+Haverão objetos com sombras, como por exemplo as árvores, e ao ocorrer a captura de um pokémon, será emitida luz da pokébola, que por alguns instantes iluminará objetos próximos. Na imagem 2 é possível observar a sombra de uma árvore. Na imagem 3 é possível observar a captura de um pokémon, que em nossa versão será acompanhada por um momento de brilho da pokebola.
 
 ### Mapeamento de texturas em todos os objetos
 <mark>`<preencher>`</mark>
