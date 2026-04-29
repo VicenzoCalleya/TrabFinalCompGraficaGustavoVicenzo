@@ -65,7 +65,7 @@ Para cada um dos requisitos abaixo (detalhados no [Enunciado do Trabalho final -
 Será introduzido o modelo do personagem controlado pelo usuário, formado por uma malha poligonal complexa. Além disso, tanto os pokémons quanto alguns objetos do cenário (como árvores) serão formados por esse tipo de malha
 
 ### Transformações geométricas controladas pelo usuário
-O usuário irá conseguir mover o personagem pelo mapa, com o personagem se rotacionando e se virando para a direção que o usuário pedir. Além disso, o usuário pode jogar uma pokebola, que embora o jogador não pode controlar totalmente sua trajetória, ele controla os parâmetros iniciais
+O usuário irá conseguir mover o personagem pelo mapa, com o personagem se rotacionando e se virando para a direção que o usuário pedir. Além disso, o usuário pode jogar uma pokebola, que embora o jogador não possa controlar totalmente sua trajetória, ele controla os parâmetros iniciais
 
 ### Diferentes tipos de câmeras
 <mark>`<preencher>`</mark>
