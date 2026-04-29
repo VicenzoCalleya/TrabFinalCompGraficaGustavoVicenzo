@@ -52,7 +52,7 @@ https://youtu.be/4iG_2mQbHQg
 > - Coloque aqui **três imagens** capturadas do vídeo acima, que você
 >   irá usar como ilustração para as explicações que vêm abaixo.
 
-<img width="1360" height="768" alt="image" src="https://github.com/user-attachments/assets/d2b35d35-fa2e-41a2-ba02-1d5e74d696b8" />
+<img width="1360" height="768" alt="image" src="https://github.com/user-attachments/assets/90c8881e-bab4-4268-a7a1-5c4cd4b7630d" />
 <img width="1360" height="768" alt="image" src="https://github.com/user-attachments/assets/3ba3f3de-343d-461c-a51c-d28fcdf00121" />
 <img width="1360" height="768" alt="image" src="https://github.com/user-attachments/assets/a56e24a0-a115-45b2-8103-783cab001f83" />
 
