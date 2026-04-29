@@ -14,8 +14,8 @@
 
 ## Detalhes do que será implementado
 
-- **Título do trabalho**: Pokémon Legends Arceus, Simplificado
-- **Parágrafo curto descrevendo o que será implementado**: Iremos fazer uma cópia básica do famoso jogo "Pokémon Legends Arceus", ao invés de nos concentrarmos na parte de batalha porém, iremos nos focar na exploração de parte do mapa e na captura de pokémons. Essas capturas são feitas por meio de pokebolas, em que o usuário terá que aremessar nos pokémons para ter uma chance de capturá-los.
+- **Título do trabalho**: Pegamon Legends: Arceus
+- **Parágrafo curto descrevendo o que será implementado**: Iremos fazer uma cópia básica do famoso jogo "Pokémon Legends: Arceus", ao invés de nos concentrarmos na parte de batalha porém, iremos nos focar na captura de pokémons, usando sua locomoção e furtividade para consegui-los. Essas capturas são feitas por meio de pokebolas, em que o usuário terá que arremessar nos pokémons para ter uma chance de capturá-los.
 
 ## Especificação visual
 
@@ -34,7 +34,7 @@
 >   do próprio repositório. Mas, garanta que qualquer um tenha
 >   permissão de acesso ao vídeo através deste link.
 
-<mark>`<preencher>`</mark>
+https://youtu.be/4iG_2mQbHQg
 
 ### Vídeo - Timestamp
 
@@ -43,8 +43,8 @@
 >   será a base de comparação para avaliar se o seu trabalho final
 >   conseguiu ou não reproduzir a referência.
 
-- **Timestamp inicial**: <mark>`<preencher>`</mark>
-- **Timestamp final**: <mark>`<preencher>`</mark>
+- **Timestamp inicial**: 1:36
+- **Timestamp final**: 2:09
 
 ### Imagens
 
