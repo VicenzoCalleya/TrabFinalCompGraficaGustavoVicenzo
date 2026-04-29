@@ -62,7 +62,7 @@ https://youtu.be/4iG_2mQbHQg
 Para cada um dos requisitos abaixo (detalhados no [Enunciado do Trabalho final - Moodle](https://moodle.ufrgs.br/mod/assign/view.php?id=6018620)), escreva um parágrafo **curto** explicando como este requisito será atendido, apontando itens específicos do vídeo/imagens que você incluiu acima que atendem estes requisitos.
 
 ### Malhas poligonais complexas
-<mark>`<preencher>`</mark>
+Será introduzido o modelo do personagem controlado pelo usuário, formado por uma malha poligonal complexa. Além disso, tanto os pokémons quanto alguns objetos do cenário (como árvores) serão formados por esse tipo de malha
 
 ### Transformações geométricas controladas pelo usuário
 <mark>`<preencher>`</mark>
