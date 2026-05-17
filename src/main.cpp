@@ -225,6 +225,17 @@ GLint g_bbox_max_uniform;
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 
+// Variáveis de posição do jogador (Esfera temporária)
+float g_PlayerX = -1.0f;
+float g_PlayerY = 0.0f;
+float g_PlayerZ = 0.0f;
+
+// Estados das teclas (false = solta, true = pressionada)
+bool g_W_Pressed = false;
+bool g_A_Pressed = false;
+bool g_S_Pressed = false;
+bool g_D_Pressed = false;
+
 int main(int argc, char* argv[])
 {
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
