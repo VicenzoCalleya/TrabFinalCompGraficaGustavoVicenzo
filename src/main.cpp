@@ -48,6 +48,7 @@
 // Headers locais, definidos na pasta "include/"
 #include "utils.h"
 #include "matrices.h"
+#include "collisions.h"
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
@@ -452,6 +453,10 @@ int main(int argc, char* argv[])
         if (g_A_Pressed) move_direction -= right_dir;    // Esquerda da câmera
         if (g_D_Pressed) move_direction += right_dir;    // Direita da câmera
 
+        // Lembra a posição antiga para caso precise voltar
+        float oldX = g_PlayerX;
+        float oldZ = g_PlayerZ;
+
         // Se o jogador estiver se movendo, normalizamos vetor final (Para evitar ele ficar mais rápido e movendo em diagonal
         if (glm::length(move_direction) > 0.0f)
         {
@@ -476,17 +481,35 @@ int main(int argc, char* argv[])
         DrawVirtualObject("the_sphere");
 
         // Desenhamos o modelo do coelho
-//        model = Matrix_Translate(1.0f,0.0f,0.0f)
-//              * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
-//        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-//        glUniform1i(g_object_id_uniform, BUNNY);
-//        DrawVirtualObject("the_bunny");
+        model = Matrix_Translate(1.0f,0.0f,0.0f)
+              * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
+        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(g_object_id_uniform, BUNNY);
+        DrawVirtualObject("the_bunny");
 
         // Desenhamos o plano do chão
         model = Matrix_Translate(0.0f,-1.1f,0.0f) * Matrix_Scale(100.0f, 1.0f, 100.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
+
+        // Testes de Colisão
+
+        // Caixa de colisão do jogador
+        glm::vec3 player_bbox_min = glm::vec3(g_PlayerX - 0.5f, g_PlayerY - 0.5f, g_PlayerZ - 0.5f);
+        glm::vec3 player_bbox_max = glm::vec3(g_PlayerX + 0.5f, g_PlayerY + 0.5f, g_PlayerZ + 0.5f);
+
+        // Caixa de colisão do coelho
+        glm::vec3 bunny_bbox_min = g_VirtualScene["the_bunny"].bbox_min;
+        glm::vec3 bunny_bbox_max = g_VirtualScene["the_bunny"].bbox_max;
+
+        // Função de Collisions.cpp
+        if (CheckCollision_AABB(player_bbox_min, player_bbox_max, bunny_bbox_min, bunny_bbox_max))
+        {
+            // Caso bata, volta atrás
+            g_PlayerX = oldX;
+            g_PlayerZ = oldZ;
+        }
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
