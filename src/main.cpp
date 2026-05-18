@@ -1264,7 +1264,7 @@ void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
     // Atualizamos a distância da câmera para a origem utilizando a
     // movimentação da "rodinha", simulando um ZOOM.
-    g_CameraDistance -= 0.1f*yoffset;
+    g_CameraDistance -= 0.3f*yoffset;
 
     // Uma câmera look-at nunca pode estar exatamente "em cima" do ponto para
     // onde ela está olhando, pois isto gera problemas de divisão por zero na
@@ -1274,7 +1274,11 @@ void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
     const float verysmallnumber = std::numeric_limits<float>::epsilon();
     if (g_CameraDistance < verysmallnumber)
         g_CameraDistance = verysmallnumber;
+    if (g_CameraDistance >= 10)
+        g_CameraDistance = 10;
 }
+
+
 
 void Correcao_KeyCallback(int key, int action, int mod);
 
