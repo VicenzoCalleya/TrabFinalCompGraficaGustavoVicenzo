@@ -348,12 +348,40 @@ int main(int argc, char* argv[])
     {
         // Movimentação do jogador calculada aqui dependendo da tecla
 
-        float player_speed = 0.02f; 
+        float player_speed = 0.05f; 
 
-        if (g_W_Pressed) g_PlayerZ -= player_speed; // Anda para frente
-        if (g_S_Pressed) g_PlayerZ += player_speed; // Anda para trás
-        if (g_A_Pressed) g_PlayerX -= player_speed; // Anda para a esquerda
-        if (g_D_Pressed) g_PlayerX += player_speed; // Anda para a direita
+        // Vetor que guarda direção do movimento
+        glm::vec4 move_direction = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+
+        // Verifica que direção a câmera está olhando considerando o Plano X,Z
+        glm::vec4 forward_dir = glm::vec4(camera_view_vector.x, 0.0f, camera_view_vector.z, 0.0f);
+        
+        // Evita crash se o vetor for zero
+        if (glm::length(forward_dir) > 0.0f) {
+            forward_dir = glm::normalize(forward_dir);
+        }
+
+        // Calculamos a direção da direita fazendo produto vetorial entra o vetor global up e a direção frontaç
+        glm::vec4 right_dir = crossproduct(forward_dir, camera_up_vector); 
+        if (glm::length(right_dir) > 0.0f) {
+            right_dir = glm::normalize(right_dir);
+        }
+
+        // Acumulamos a direção de acordo com a seta pressionada
+        if (g_W_Pressed) move_direction += forward_dir;  // Frente da câmera
+        if (g_S_Pressed) move_direction -= forward_dir;  // Trás da câmera
+        if (g_A_Pressed) move_direction -= right_dir;    // Esquerda da câmera
+        if (g_D_Pressed) move_direction += right_dir;    // Direita da câmera
+
+        // Se o jogador estiver se movendo, normalizamos vetor final (Para evitar ele ficar mais rápido e movendo em diagonal
+        if (glm::length(move_direction) > 0.0f)
+        {
+            move_direction = glm::normalize(move_direction);
+            
+            // Atualizamos posição do jogador multiplicando a velocidade com a direção final
+            g_PlayerX += move_direction.x * player_speed;
+            g_PlayerZ += move_direction.z * player_speed;
+        }
         
         // Aqui executamos as operações de renderização
 
