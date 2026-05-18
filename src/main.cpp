@@ -347,131 +347,102 @@ int main(int argc, char* argv[])
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
-        
-        // Aqui executamos as operações de renderização
-
-        // Definimos a cor do "fundo" do framebuffer como branco.  Tal cor é
-        // definida como coeficientes RGBA: Red, Green, Blue, Alpha; isto é:
-        // Vermelho, Verde, Azul, Alpha (valor de transparência).
-        // Conversaremos sobre sistemas de cores nas aulas de Modelos de Iluminação.
-        //
-        //           R     G     B     A
+        // 1. LIMPEZA DO BUFFER (Igual)
         glClearColor(0.9f, 0.9f, 1.0f, 1.0f);
-
-        // "Pintamos" todos os pixels do framebuffer com a cor definida acima,
-        // e também resetamos todos os pixels do Z-buffer (depth buffer).
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
-        // os shaders de vértice e fragmentos).
         glUseProgram(g_GpuProgramID);
 
-        // Calcula posição do jogador, para que a câmera o siga
+        // ========================================================
+        // 2. MOVIMENTAÇÃO DO JOGADOR (Calculada primeiro)
+        // ========================================================
+        float player_speed = 0.05f; 
+        glm::vec4 move_direction = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+
+        // Nota: Como movemos a câmera para baixo, usamos os vetores calculados no final do frame PASSADO.
+        // Na primeira rodada, eles começam com os valores padrão.
+        glm::vec4 forward_dir = glm::vec4(camera_view_vector.x, 0.0f, camera_view_vector.z, 0.0f);
+        if (glm::length(forward_dir) > 0.0f) forward_dir = glm::normalize(forward_dir);
+
+        glm::vec4 right_dir = crossproduct(forward_dir, camera_up_vector); 
+        if (glm::length(right_dir) > 0.0f) right_dir = glm::normalize(right_dir);
+
+        if (g_W_Pressed) move_direction += forward_dir;  
+        if (g_S_Pressed) move_direction -= forward_dir;  
+        if (g_A_Pressed) move_direction -= right_dir;    
+        if (g_D_Pressed) move_direction += right_dir;    
+
+        // Guarda posição antiga antes de aplicar o movimento
+        float oldX = g_PlayerX;
+        float oldZ = g_PlayerZ;
+
+        if (glm::length(move_direction) > 0.0f)
+        {
+            move_direction = glm::normalize(move_direction);
+            g_PlayerX += move_direction.x * player_speed;
+            g_PlayerZ += move_direction.z * player_speed;
+        }
+
+        // ========================================================
+        // 3. TESTE DE COLISÃO (Valida se o movimento acima foi legal)
+        // ========================================================
+        glm::vec3 player_bbox_min = glm::vec3(g_PlayerX - 0.5f, g_PlayerY - 0.5f, g_PlayerZ - 0.5f);
+        glm::vec3 player_bbox_max = glm::vec3(g_PlayerX + 0.5f, g_PlayerY + 0.5f, g_PlayerZ + 0.5f);
+
+        glm::vec3 bunny_bbox_min = g_VirtualScene["the_bunny"].bbox_min;
+        glm::vec3 bunny_bbox_max = g_VirtualScene["the_bunny"].bbox_max;
+
+        if (CheckCollision_AABB(player_bbox_min, player_bbox_max, bunny_bbox_min, bunny_bbox_max))
+        {
+            // Se colidir, cancelamos o movimento IMEDIATAMENTE antes de desenhar
+            g_PlayerX = oldX;
+            g_PlayerZ = oldZ;
+        }
+
+        // ========================================================
+        // 4. ATUALIZAÇÃO DA CÂMERA (Usa a posição confirmada do jogador)
+        // ========================================================
         glm::vec4 player_pos = glm::vec4(g_PlayerX, g_PlayerY, g_PlayerZ, 1.0f);
 
-        // Computamos a posição da câmera utilizando coordenadas esféricas.  As
-        // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
-        // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
-        // e ScrollCallback().
         float r = g_CameraDistance;
         float y = r*sin(g_CameraPhi);
         float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
         float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
 
-        // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
-        // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::vec4 camera_position_c  = player_pos + glm::vec4(x, y, z, 0.0f); // Posição do jogador + Deslocamento do mouse
-        glm::vec4 camera_lookat_l    = player_pos; // Ponto "l", para onde a câmera (look-at) estará sempre olhando
-        glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
-        glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
+        camera_position_c  = player_pos + glm::vec4(x, y, z, 0.0f); 
+        camera_lookat_l    = player_pos; 
+        camera_view_vector = camera_lookat_l - camera_position_c; 
+        camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); 
 
-        // Computamos a matriz "View" utilizando os parâmetros da câmera para
-        // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
 
-        // Agora computamos a matriz de Projeção.
+        // Matriz de Projeção (Perspectiva ou Ortográfica)
         glm::mat4 projection;
+        float nearplane = -0.1f;  
+        float farplane  = -100.0f; 
 
-        // Note que, no sistema de coordenadas da câmera, os planos near e far
-        // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
-        float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -100.0f; // Posição do "far plane"
-
-        if (g_UsePerspectiveProjection)
-        {
-            // Projeção Perspectiva.
-            // Para definição do field of view (FOV), veja slides 205-215 do documento Aula_09_Projecoes.pdf.
+        if (g_UsePerspectiveProjection) {
             float field_of_view = 3.141592 / 3.0f;
             projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
-        }
-        else
-        {
-            // Projeção Ortográfica.
-            // Para definição dos valores l, r, b, t ("left", "right", "bottom", "top"),
-            // PARA PROJEÇÃO ORTOGRÁFICA veja slides 219-224 do documento Aula_09_Projecoes.pdf.
-            // Para simular um "zoom" ortográfico, computamos o valor de "t"
-            // utilizando a variável g_CameraDistance.
+        } else {
             float t = 1.5f*g_CameraDistance/2.5f;
             float b = -t;
-            float r = t*g_ScreenRatio;
-            float l = -r;
-            projection = Matrix_Orthographic(l, r, b, t, nearplane, farplane);
+            float r_ortho = t*g_ScreenRatio;
+            float l = -r_ortho;
+            projection = Matrix_Orthographic(l, r_ortho, b, t, nearplane, farplane);
         }
 
-        glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
-
-        // Enviamos as matrizes "view" e "projection" para a placa de vídeo
-        // (GPU). Veja o arquivo "shader_vertex.glsl", onde estas são
-        // efetivamente aplicadas em todos os pontos.
+        // Enviamos as matrizes globais de visualização atualizadas para a GPU
         glUniformMatrix4fv(g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
         glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
-        // Movimentação do jogador calculada aqui dependendo da tecla
-
-        float player_speed = 0.05f; 
-
-        // Vetor que guarda direção do movimento
-        glm::vec4 move_direction = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-
-        // Verifica que direção a câmera está olhando considerando o Plano X,Z
-        glm::vec4 forward_dir = glm::vec4(camera_view_vector.x, 0.0f, camera_view_vector.z, 0.0f);
-        
-        // Evita crash se o vetor for zero
-        if (glm::length(forward_dir) > 0.0f) {
-            forward_dir = glm::normalize(forward_dir);
-        }
-
-        // Calculamos a direção da direita fazendo produto vetorial entra o vetor global up e a direção frontaç
-        glm::vec4 right_dir = crossproduct(forward_dir, camera_up_vector); 
-        if (glm::length(right_dir) > 0.0f) {
-            right_dir = glm::normalize(right_dir);
-        }
-
-        // Acumulamos a direção de acordo com a seta pressionada
-        if (g_W_Pressed) move_direction += forward_dir;  // Frente da câmera
-        if (g_S_Pressed) move_direction -= forward_dir;  // Trás da câmera
-        if (g_A_Pressed) move_direction -= right_dir;    // Esquerda da câmera
-        if (g_D_Pressed) move_direction += right_dir;    // Direita da câmera
-
-        // Lembra a posição antiga para caso precise voltar
-        float oldX = g_PlayerX;
-        float oldZ = g_PlayerZ;
-
-        // Se o jogador estiver se movendo, normalizamos vetor final (Para evitar ele ficar mais rápido e movendo em diagonal
-        if (glm::length(move_direction) > 0.0f)
-        {
-            move_direction = glm::normalize(move_direction);
-            
-            // Atualizamos posição do jogador multiplicando a velocidade com a direção final
-            g_PlayerX += move_direction.x * player_speed;
-            g_PlayerZ += move_direction.z * player_speed;
-        }
-
+        // ========================================================
+        // 5. DESENHO DOS MODELOS (Com as posições e matrizes 100% corrigidas)
+        // ========================================================
         #define SPHERE 0
         #define BUNNY  1
         #define PLANE  2
 
-        // Desenhamos o modelo da esfera; Modificamos modelo da esfera para temporariamente representar o jogador
+        // Esfera (Jogador)
         model = Matrix_Translate(g_PlayerX, g_PlayerY, g_PlayerZ)
               * Matrix_Rotate_Z(0.6f)
               * Matrix_Rotate_X(0.2f)
@@ -480,60 +451,25 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, SPHERE);
         DrawVirtualObject("the_sphere");
 
-        // Desenhamos o modelo do coelho
+        // Coelho (Inimigo/Obstáculo está em X=5.0f para não nascer colidindo)
         model = Matrix_Translate(5.0f,0.0f,0.0f)
               * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, BUNNY);
         DrawVirtualObject("the_bunny");
 
-        // Desenhamos o plano do chão
+        // Chão
         model = Matrix_Translate(0.0f,-1.1f,0.0f) * Matrix_Scale(100.0f, 1.0f, 100.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
 
-        // Testes de Colisão
-
-        // Caixa de colisão do jogador
-        glm::vec3 player_bbox_min = glm::vec3(g_PlayerX - 0.5f, g_PlayerY - 0.5f, g_PlayerZ - 0.5f);
-        glm::vec3 player_bbox_max = glm::vec3(g_PlayerX + 0.5f, g_PlayerY + 0.5f, g_PlayerZ + 0.5f);
-
-        // Caixa de colisão do coelho
-        glm::vec3 bunny_bbox_min = g_VirtualScene["the_bunny"].bbox_min;
-        glm::vec3 bunny_bbox_max = g_VirtualScene["the_bunny"].bbox_max;
-
-        // Função de Collisions.cpp
-        if (CheckCollision_AABB(player_bbox_min, player_bbox_max, bunny_bbox_min, bunny_bbox_max))
-        {
-            // Caso bata, volta atrás
-            g_PlayerX = oldX;
-            g_PlayerZ = oldZ;
-        }
-
-        // Imprimimos na tela os ângulos de Euler que controlam a rotação do
-        // terceiro cubo.
+        // RENDERING DE TEXTO E SWAP BUFFERS (Igual)
         TextRendering_ShowEulerAngles(window);
-
-        // Imprimimos na informação sobre a matriz de projeção sendo utilizada.
         TextRendering_ShowProjection(window);
-
-        // Imprimimos na tela informação sobre o número de quadros renderizados
-        // por segundo (frames per second).
         TextRendering_ShowFramesPerSecond(window);
 
-        // O framebuffer onde OpenGL executa as operações de renderização não
-        // é o mesmo que está sendo mostrado para o usuário, caso contrário
-        // seria possível ver artefatos conhecidos como "screen tearing". A
-        // chamada abaixo faz a troca dos buffers, mostrando para o usuário
-        // tudo que foi renderizado pelas funções acima.
-        // Veja o link: https://en.wikipedia.org/w/index.php?title=Multiple_buffering&oldid=793452829#Double_buffering_in_computer_graphics
         glfwSwapBuffers(window);
-
-        // Verificamos com o sistema operacional se houve alguma interação do
-        // usuário (teclado, mouse, ...). Caso positivo, as funções de callback
-        // definidas anteriormente usando glfwSet*Callback() serão chamadas
-        // pela biblioteca GLFW.
         glfwPollEvents();
     }
 
