@@ -346,6 +346,15 @@ int main(int argc, char* argv[])
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
+        // Movimentação do jogador calculada aqui dependendo da tecla
+
+        float player_speed = 0.02f; 
+
+        if (g_W_Pressed) g_PlayerZ -= player_speed; // Anda para frente
+        if (g_S_Pressed) g_PlayerZ += player_speed; // Anda para trás
+        if (g_A_Pressed) g_PlayerX -= player_speed; // Anda para a esquerda
+        if (g_D_Pressed) g_PlayerX += player_speed; // Anda para a direita
+        
         // Aqui executamos as operações de renderização
 
         // Definimos a cor do "fundo" do framebuffer como branco.  Tal cor é
@@ -425,8 +434,8 @@ int main(int argc, char* argv[])
         #define BUNNY  1
         #define PLANE  2
 
-        // Desenhamos o modelo da esfera
-        model = Matrix_Translate(-1.0f,0.0f,0.0f)
+        // Desenhamos o modelo da esfera; Modificamos modelo da esfera para temporariamente representar o jogador
+        model = Matrix_Translate(g_PlayerX, g_PlayerY, g_PlayerZ)
               * Matrix_Rotate_Z(0.6f)
               * Matrix_Rotate_X(0.2f)
               * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
@@ -1289,6 +1298,31 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         fprintf(stdout,"Shaders recarregados!\n");
         fflush(stdout);
     }
+
+    // Controles de movimentação do jogador (W, A, S e D)
+
+    if (key == GLFW_KEY_W)
+    {
+        if (action == GLFW_PRESS)   g_W_Pressed = true;
+        if (action == GLFW_RELEASE) g_W_Pressed = false;
+    }
+    if (key == GLFW_KEY_S)
+    {
+        if (action == GLFW_PRESS)   g_S_Pressed = true;
+        if (action == GLFW_RELEASE) g_S_Pressed = false;
+    }
+    if (key == GLFW_KEY_A)
+    {
+        if (action == GLFW_PRESS)   g_A_Pressed = true;
+        if (action == GLFW_RELEASE) g_A_Pressed = false;
+    }
+    if (key == GLFW_KEY_D)
+    {
+        if (action == GLFW_PRESS)   g_D_Pressed = true;
+        if (action == GLFW_RELEASE) g_D_Pressed = false;
+    }
+
+    
 }
 
 // Definimos o callback para impressão de erros da GLFW no terminal
