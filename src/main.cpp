@@ -395,8 +395,8 @@ int main(int argc, char* argv[])
         glm::vec3 player_bbox_min = glm::vec3(g_PlayerX - 0.5f, g_PlayerY - 0.5f, g_PlayerZ - 0.5f);
         glm::vec3 player_bbox_max = glm::vec3(g_PlayerX + 0.5f, g_PlayerY + 0.5f, g_PlayerZ + 0.5f);
 
-        glm::vec3 bunny_bbox_min = g_VirtualScene["the_bunny"].bbox_min;
-        glm::vec3 bunny_bbox_max = g_VirtualScene["the_bunny"].bbox_max;
+        glm::vec3 bunny_bbox_min = g_VirtualScene["the_bunny"].bbox_min + glm::vec3(5.0f, 0.0f, 0.0f);
+        glm::vec3 bunny_bbox_max = g_VirtualScene["the_bunny"].bbox_max + glm::vec3(5.0f, 0.0f, 0.0f);
 
         if (CheckCollision_AABB(player_bbox_min, player_bbox_max, bunny_bbox_min, bunny_bbox_max))
         {
