@@ -244,6 +244,13 @@ struct GameObject {
     glm::vec3 scale;        
     glm::vec3 rotation;     
     bool is_solid;          // true = passível a colisão
+    bool is_moving_bezier; // true = objeto move com curva de bézier
+    glm::vec3 p0;          // Ponto inicial
+    glm::vec3 p1;          // Ponto de controle
+    glm::vec3 p2;          // Ponto final
+    float t_bezier;        // Tempo paramétrico atual
+    float speed_bezier;    // Velocidade de deslocamento do t
+    bool is_returning;     // Vê se ele está voltando ou não
 };
 // Vetor de objetos do mapa inteiro
 std::vector<GameObject> g_GameWorld;
@@ -274,6 +281,7 @@ void InitializeMap() {
     chao.scale      = glm::vec3(100.0f, 1.0f, 100.0f); 
     chao.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
     chao.is_solid   = false;
+    chao.is_moving_bezier = false;
     g_GameWorld.push_back(chao);
     
     // 2. O Coelho
@@ -284,17 +292,31 @@ void InitializeMap() {
     coelho.scale      = glm::vec3(1.0f, 1.0f, 1.0f);  
     coelho.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
     coelho.is_solid   = true;
+    coelho.is_moving_bezier = true;
+    coelho.p0           = glm::vec3(5.0f, 0.0f, 0.0f);   
+    coelho.p1           = glm::vec3(10.0f, 0.0f, 5.0f);  
+    coelho.p2           = glm::vec3(5.0f, 0.0f, 10.0f);  
+    coelho.t_bezier     = 0.0f;                          
+    coelho.speed_bezier = 0.2f; 
+    coelho.is_returning = false;                         
     g_GameWorld.push_back(coelho);
 
     // 3. Segundo coelho
     GameObject coelho2;
-    coelho.model_name = "the_bunny";
-    coelho.object_id  = BUNNY;
-    coelho.position   = glm::vec3(15.0f, 0.0f, 0.0f);
-    coelho.scale      = glm::vec3(1.0f, 1.0f, 1.0f);  
-    coelho.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
-    coelho.is_solid   = true;
-    g_GameWorld.push_back(coelho);
+    coelho2.model_name = "the_bunny";
+    coelho2.object_id  = BUNNY;
+    coelho2.position   = glm::vec3(15.0f, 0.0f, 0.0f);
+    coelho2.scale      = glm::vec3(1.0f, 1.0f, 1.0f);  
+    coelho2.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
+    coelho2.is_solid   = true;
+    coelho2.is_moving_bezier = true;
+    coelho2.p0           = glm::vec3(15.0f, 0.0f, 0.0f);   
+    coelho2.p1           = glm::vec3(15.0f, 0.0f, 5.0f);  
+    coelho2.p2           = glm::vec3(20.0f, 0.0f, 5.0f);  
+    coelho2.t_bezier     = 0.0f;                          
+    coelho2.speed_bezier = 0.2f;
+    coelho2.is_returning = false;  
+    g_GameWorld.push_back(coelho2);
 }
 
 int main(int argc, char* argv[])
@@ -411,10 +433,21 @@ int main(int argc, char* argv[])
     glm::vec4 camera_up_vector   = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
     glm::vec4 camera_view_vector = glm::vec4(0.0f, 0.0f, -1.0f, 0.0f);
 
+    // Variáveis estáticas para controle de tempo
+    static float last_frame_time = 0.0f;
+
     InitializeMap();
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
+        // Cálculo preciso do Delta Time
+        float current_time = (float)glfwGetTime();
+        float delta_time = current_time - last_frame_time;
+        last_frame_time = current_time; 
+
+        // limite de delta_time
+        if (delta_time > 0.1f) delta_time = 0.1f;
+
         // 1. LIMPEZA DO BUFFER (Igual)
         glClearColor(0.9f, 0.9f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -450,14 +483,71 @@ int main(int argc, char* argv[])
             g_PlayerZ += move_direction.z * player_speed;
         }
 
-        // ========================================================
-        // 3. TESTE DE COLISÃO (Valida se o movimento acima foi legal)
-        // ========================================================
+        // Calcula hitbox do jogador, usada depois
         glm::vec3 player_bbox_min = glm::vec3(g_PlayerX - 0.5f, g_PlayerY - 0.5f, g_PlayerZ - 0.5f);
         glm::vec3 player_bbox_max = glm::vec3(g_PlayerX + 0.5f, g_PlayerY + 0.5f, g_PlayerZ + 0.5f);
+
+        // ========================================================
+        // 3. ATUALIZAÇÃO DA CURVA DE BÉZIER DOS POKÉMONS
+        // ========================================================
+        for (auto& obj : g_GameWorld)
+        {
+            if (obj.is_moving_bezier)
+            {
+                glm::vec3 old_obj_pos = obj.position;
+                float old_t = obj.t_bezier;
+
+                if (!obj.is_returning) {
+                    obj.t_bezier += obj.speed_bezier * delta_time;
+                    if (obj.t_bezier >= 1.0f) {
+                        obj.t_bezier = 1.0f;
+                        obj.is_returning = true; 
+                    }
+                } else {
+                    obj.t_bezier -= obj.speed_bezier * delta_time;
+                    if (obj.t_bezier <= 0.0f) {
+                        obj.t_bezier = 0.0f;
+                        obj.is_returning = false; 
+                    }
+                }
+
+                float t = obj.t_bezier;
+                
+                //fórmula de Bézier
+                obj.position = (1.0f - t) * (1.0f - t) * obj.p0
+                             + 2.0f * (1.0f - t) * t * obj.p1
+                             + t * t * obj.p2;
+
+                // Hitbox temporária para objeto
+                glm::vec3 obj_min = g_VirtualScene[obj.model_name].bbox_min + obj.position;
+                glm::vec3 obj_max = g_VirtualScene[obj.model_name].bbox_max + obj.position;
+
+                if (CheckCollision_AABB(player_bbox_min, player_bbox_max, obj_min, obj_max)) 
+                {
+                    obj.position = old_obj_pos;
+                    obj.t_bezier = old_t;
+                }
+                else // cálculo de rotação para ele ficar de frente com o caminho que está andando
+                {
+                    glm::vec3 direction = 2.0f * (1.0f - t) * (obj.p1 - obj.p0)
+                                        + 2.0f * t * (obj.p2 - obj.p1);
+                    
+                    if (obj.is_returning) {
+                        direction = -direction;
+                    }
+
+                    obj.rotation.y = atan2(direction.x, direction.z);
+                }
+            }
+        }
+
+        // ========================================================
+        // 4. TESTE DE COLISÃO (Valida se o movimento acima foi legal)
+        // ========================================================
         
         g_SceneColliders.clear();
 
+        // constrói caixas de colisão
         for (const auto& obj : g_GameWorld) 
         {
             if (obj.is_solid) 
@@ -471,6 +561,7 @@ int main(int argc, char* argv[])
             }
         }
 
+        // verifica cada caixa com o jogador
         for (const auto& collider : g_SceneColliders) 
         {
             if (CheckCollision_AABB(player_bbox_min, player_bbox_max, collider.min, collider.max)) 
@@ -482,7 +573,7 @@ int main(int argc, char* argv[])
         }
 
         // ========================================================
-        // 4. ATUALIZAÇÃO DA CÂMERA (Usa a posição confirmada do jogador)
+        // 5. ATUALIZAÇÃO DA CÂMERA (Usa a posição confirmada do jogador)
         // ========================================================
         glm::vec4 player_pos = glm::vec4(g_PlayerX, g_PlayerY, g_PlayerZ, 1.0f);
 
@@ -519,7 +610,7 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
         // ========================================================
-        // 5. DESENHO DOS MODELOS (Com as posições e matrizes 100% corrigidas)
+        // 6. DESENHO DOS MODELOS (Com as posições e matrizes 100% corrigidas)
         // ========================================================
 
         // Esfera (Jogador)
@@ -531,6 +622,7 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, SPHERE);
         DrawVirtualObject("the_sphere");
 
+        // Todos os outros objetos
         for (const auto& obj : g_GameWorld)
         {
             model = Matrix_Translate(obj.position.x, obj.position.y, obj.position.z)
