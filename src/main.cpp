@@ -108,7 +108,6 @@ struct ObjModel
     }
 };
 
-
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
 void PopMatrix(glm::mat4& M);
@@ -237,6 +236,67 @@ bool g_A_Pressed = false;
 bool g_S_Pressed = false;
 bool g_D_Pressed = false;
 
+// estrutura de instâncias
+struct GameObject {
+    std::string model_name; 
+    int object_id;          // Shader
+    glm::vec3 position;     
+    glm::vec3 scale;        
+    glm::vec3 rotation;     
+    bool is_solid;          // true = passível a colisão
+};
+// Vetor de objetos do mapa inteiro
+std::vector<GameObject> g_GameWorld;
+
+// Estrutura que mapeia caixas de colisão
+struct Collider {
+    glm::vec3 min;
+    glm::vec3 max;
+};
+
+// Vetor global que guarda todos os objetos sólidos do cenário
+std::vector<Collider> g_SceneColliders;
+
+#define SPHERE 0
+#define BUNNY  1
+#define PLANE  2
+
+// Função que coloca todos os objetos no vetor
+void InitializeMap() {
+    // Certifique-se de limpar o vetor antes, caso a função seja chamada mais de uma vez
+    g_GameWorld.clear();
+
+    // 1. O Chão
+    GameObject chao;
+    chao.model_name = "the_plane";
+    chao.object_id  = PLANE;
+    chao.position   = glm::vec3(0.0f, -1.1f, 0.0f);
+    chao.scale      = glm::vec3(100.0f, 1.0f, 100.0f); 
+    chao.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
+    chao.is_solid   = false;
+    g_GameWorld.push_back(chao);
+    
+    // 2. O Coelho
+    GameObject coelho;
+    coelho.model_name = "the_bunny";
+    coelho.object_id  = BUNNY;
+    coelho.position   = glm::vec3(5.0f, 0.0f, 0.0f);
+    coelho.scale      = glm::vec3(1.0f, 1.0f, 1.0f);  
+    coelho.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
+    coelho.is_solid   = true;
+    g_GameWorld.push_back(coelho);
+
+    // 3. Segundo coelho
+    GameObject coelho2;
+    coelho.model_name = "the_bunny";
+    coelho.object_id  = BUNNY;
+    coelho.position   = glm::vec3(15.0f, 0.0f, 0.0f);
+    coelho.scale      = glm::vec3(1.0f, 1.0f, 1.0f);  
+    coelho.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
+    coelho.is_solid   = true;
+    g_GameWorld.push_back(coelho);
+}
+
 int main(int argc, char* argv[])
 {
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
@@ -351,6 +411,7 @@ int main(int argc, char* argv[])
     glm::vec4 camera_up_vector   = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
     glm::vec4 camera_view_vector = glm::vec4(0.0f, 0.0f, -1.0f, 0.0f);
 
+    InitializeMap();
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -368,10 +429,10 @@ int main(int argc, char* argv[])
         // Nota: Como movemos a câmera para baixo, usamos os vetores calculados no final do frame PASSADO.
         // Na primeira rodada, eles começam com os valores padrão.
         glm::vec4 forward_dir = glm::vec4(camera_view_vector.x, 0.0f, camera_view_vector.z, 0.0f);
-        if (glm::length(forward_dir) > 0.0f) forward_dir = glm::normalize(forward_dir);
+        if (norm(forward_dir) > 0.0f) forward_dir = forward_dir / norm(forward_dir);
 
         glm::vec4 right_dir = crossproduct(forward_dir, camera_up_vector); 
-        if (glm::length(right_dir) > 0.0f) right_dir = glm::normalize(right_dir);
+        if (norm(right_dir) > 0.0f) right_dir = right_dir / norm(right_dir);
 
         if (g_W_Pressed) move_direction += forward_dir;  
         if (g_S_Pressed) move_direction -= forward_dir;  
@@ -382,9 +443,9 @@ int main(int argc, char* argv[])
         float oldX = g_PlayerX;
         float oldZ = g_PlayerZ;
 
-        if (glm::length(move_direction) > 0.0f)
+        if (norm(move_direction) > 0.0f)
         {
-            move_direction = glm::normalize(move_direction);
+            move_direction = move_direction / norm(move_direction);
             g_PlayerX += move_direction.x * player_speed;
             g_PlayerZ += move_direction.z * player_speed;
         }
@@ -394,15 +455,30 @@ int main(int argc, char* argv[])
         // ========================================================
         glm::vec3 player_bbox_min = glm::vec3(g_PlayerX - 0.5f, g_PlayerY - 0.5f, g_PlayerZ - 0.5f);
         glm::vec3 player_bbox_max = glm::vec3(g_PlayerX + 0.5f, g_PlayerY + 0.5f, g_PlayerZ + 0.5f);
+        
+        g_SceneColliders.clear();
 
-        glm::vec3 bunny_bbox_min = g_VirtualScene["the_bunny"].bbox_min + glm::vec3(5.0f, 0.0f, 0.0f);
-        glm::vec3 bunny_bbox_max = g_VirtualScene["the_bunny"].bbox_max + glm::vec3(5.0f, 0.0f, 0.0f);
-
-        if (CheckCollision_AABB(player_bbox_min, player_bbox_max, bunny_bbox_min, bunny_bbox_max))
+        for (const auto& obj : g_GameWorld) 
         {
-            // Se colidir, cancelamos o movimento IMEDIATAMENTE antes de desenhar
-            g_PlayerX = oldX;
-            g_PlayerZ = oldZ;
+            if (obj.is_solid) 
+            {
+                Collider c;
+
+                c.min = g_VirtualScene[obj.model_name].bbox_min + obj.position;
+                c.max = g_VirtualScene[obj.model_name].bbox_max + obj.position;
+                
+                g_SceneColliders.push_back(c);
+            }
+        }
+
+        for (const auto& collider : g_SceneColliders) 
+        {
+            if (CheckCollision_AABB(player_bbox_min, player_bbox_max, collider.min, collider.max)) 
+            {
+                g_PlayerX = oldX;
+                g_PlayerZ = oldZ;
+                break; 
+            }
         }
 
         // ========================================================
@@ -445,9 +521,6 @@ int main(int argc, char* argv[])
         // ========================================================
         // 5. DESENHO DOS MODELOS (Com as posições e matrizes 100% corrigidas)
         // ========================================================
-        #define SPHERE 0
-        #define BUNNY  1
-        #define PLANE  2
 
         // Esfera (Jogador)
         model = Matrix_Translate(g_PlayerX, g_PlayerY, g_PlayerZ)
@@ -458,18 +531,17 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, SPHERE);
         DrawVirtualObject("the_sphere");
 
-        // Coelho (Inimigo/Obstáculo está em X=5.0f para não nascer colidindo)
-        model = Matrix_Translate(5.0f,0.0f,0.0f)
-              * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, BUNNY);
-        DrawVirtualObject("the_bunny");
-
-        // Chão
-        model = Matrix_Translate(0.0f,-1.1f,0.0f) * Matrix_Scale(100.0f, 1.0f, 100.0f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, PLANE);
-        DrawVirtualObject("the_plane");
+        for (const auto& obj : g_GameWorld)
+        {
+            model = Matrix_Translate(obj.position.x, obj.position.y, obj.position.z)
+                  * Matrix_Rotate_Y(obj.rotation.y)
+                  * Matrix_Rotate_X(obj.rotation.x)
+                  * Matrix_Rotate_Z(obj.rotation.z)
+                  * Matrix_Scale(obj.scale.x, obj.scale.y, obj.scale.z);
+            glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(g_object_id_uniform, obj.object_id);
+            DrawVirtualObject(obj.model_name.c_str());
+        }
 
         // RENDERING DE TEXTO E SWAP BUFFERS (Igual)
         TextRendering_ShowEulerAngles(window);
