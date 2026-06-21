@@ -220,6 +220,7 @@ GLint g_model_uniform;
 GLint g_view_uniform;
 GLint g_projection_uniform;
 GLint g_object_id_uniform;
+GLint g_material_id_uniform;
 GLint g_bbox_min_uniform;
 GLint g_bbox_max_uniform;
 
@@ -228,7 +229,7 @@ GLuint g_NumLoadedTextures = 0;
 
 // Variáveis de posição do jogador (Esfera temporária)
 float g_PlayerX = -1.0f;
-float g_PlayerY = 0.0f;
+float g_PlayerY = -1.098f;
 float g_PlayerZ = 0.0f;
 
 // Estados das teclas (false = solta, true = pressionada)
@@ -271,6 +272,7 @@ std::vector<Collider> g_SceneColliders;
 #define PLANE            3
 #define CHARMANDER_EYES  4
 #define SQUIRTLE_EYES    5
+#define TRAINER          6
 
 // Função que coloca todos os objetos no vetor
 void InitializeMap() {
@@ -396,16 +398,17 @@ int main(int argc, char* argv[])
     LoadShadersFromFiles();
 
 // Carregamento de Texturas
-    LoadTextureImage("../../data/red_brick_diff_1k.jpg");        // TextureImage0 (Esfera)
     LoadTextureImage("../../data/rocky_terrain_02_diff_1k.jpg"); // TextureImage1 (Plano)
     LoadTextureImage("../../data/Charmander_BaseColor_1001.png"); // TextureImage2 (Charmander)
     LoadTextureImage("../../data/Squirtle_BaseColor_1001.jpg");   // TextureImage3 (Squirtle)
+    LoadTextureImage("../../data/BASE1_Base_Color.png");         // TextureImage4 (Treinador BASE1)
+    LoadTextureImage("../../data/BASE2_Base_Color.png");         // TextureImage5 (Treinador BASE2)
+    LoadTextureImage("../../data/BASE3_Base_Color.png");         // TextureImage6 (Treinador BASE3)
 
     // Carregamento de Modelos
-    ObjModel spheremodel("../../data/sphere.obj");
-    ComputeNormals(&spheremodel);
-    BuildTrianglesAndAddToVirtualScene(&spheremodel);
-
+    ObjModel treinadormodel("../../data/treinador.obj");
+    ComputeNormals(&treinadormodel);
+    BuildTrianglesAndAddToVirtualScene(&treinadormodel);
     ObjModel planemodel("../../data/plane.obj");
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
@@ -465,29 +468,25 @@ int main(int argc, char* argv[])
         // ========================================================
         // 2. MOVIMENTAÇÃO DO JOGADOR (Calculada primeiro)
         // ========================================================
-        float player_speed = 0.05f; 
-        glm::vec4 move_direction = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+        float player_speed = 4.0f * delta_time;
+        float turn_speed   = 2.0f * delta_time;
+        glm::vec3 move_direction = glm::vec3(0.0f, 0.0f, 0.0f);
 
-        // Nota: Como movemos a câmera para baixo, usamos os vetores calculados no final do frame PASSADO.
-        // Na primeira rodada, eles começam com os valores padrão.
-        glm::vec4 forward_dir = glm::vec4(camera_view_vector.x, 0.0f, camera_view_vector.z, 0.0f);
-        if (norm(forward_dir) > 0.0f) forward_dir = forward_dir / norm(forward_dir);
+        glm::vec3 facing_dir = glm::vec3(sinf(g_AngleY), 0.0f, cosf(g_AngleY));
 
-        glm::vec4 right_dir = crossproduct(forward_dir, camera_up_vector); 
-        if (norm(right_dir) > 0.0f) right_dir = right_dir / norm(right_dir);
-
-        if (g_W_Pressed) move_direction += forward_dir;  
-        if (g_S_Pressed) move_direction -= forward_dir;  
-        if (g_A_Pressed) move_direction -= right_dir;    
-        if (g_D_Pressed) move_direction += right_dir;    
+        if (g_W_Pressed) move_direction += facing_dir;
+        if (g_S_Pressed) move_direction -= facing_dir;
+        if (g_A_Pressed) g_AngleY += turn_speed;
+        if (g_D_Pressed) g_AngleY -= turn_speed;
 
         // Guarda posição antiga antes de aplicar o movimento
         float oldX = g_PlayerX;
         float oldZ = g_PlayerZ;
 
-        if (norm(move_direction) > 0.0f)
+        float move_length = glm::length(move_direction);
+        if (move_length > 0.0f)
         {
-            move_direction = move_direction / norm(move_direction);
+            move_direction = move_direction / move_length;
             g_PlayerX += move_direction.x * player_speed;
             g_PlayerZ += move_direction.z * player_speed;
         }
@@ -622,14 +621,13 @@ int main(int argc, char* argv[])
         // 6. DESENHO DOS MODELOS (Com as posições e matrizes 100% corrigidas)
         // ========================================================
 
-        // Esfera (Jogador)
+        // Jogador humano controlável
         model = Matrix_Translate(g_PlayerX, g_PlayerY, g_PlayerZ)
-              * Matrix_Rotate_Z(0.6f)
-              * Matrix_Rotate_X(0.2f)
-              * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
+              * Matrix_Rotate_Y(g_AngleY)
+              * Matrix_Scale(0.3f, 0.3f, 0.3f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, SPHERE);
-        DrawVirtualObject("the_sphere");
+        glUniform1i(g_object_id_uniform, TRAINER);
+        DrawVirtualObjectByPattern("BASE", TRAINER);
 
         // Todos os outros objetos
         for (const auto& obj : g_GameWorld)
@@ -719,6 +717,7 @@ void DrawVirtualObject(const char* object_name)
     // "Ligamos" o VAO. Informamos que queremos utilizar os atributos de
     // vértices apontados pelo VAO criado pela função BuildTrianglesAndAddToVirtualScene(). Veja
     // comentários detalhados dentro da definição de BuildTrianglesAndAddToVirtualScene().
+    glUniform1i(g_material_id_uniform, 0);
     glBindVertexArray(g_VirtualScene[object_name].vertex_array_object_id);
 
     // Setamos as variáveis "bbox_min" e "bbox_max" do fragment shader
@@ -756,23 +755,33 @@ void DrawVirtualObjectByPattern(const char* pattern, int base_object_id)
     // Tenta desenhar todos os objetos que contenham o padrão no nome
     for (const auto& pair : g_VirtualScene) {
         const std::string& name = pair.first;
-        // Verifica se o nome começa com o padrão OU contém o padrão como palavra-chave
-        if (name.find(pattern_str) != std::string::npos || name.find(pattern_str) == 0) {
+        // Verifica se o nome contém o padrão como palavra-chave
+        if (name.find(pattern_str) != std::string::npos) {
             found = true;
             
             // Detecta se é um olho e ajusta o object_id
             int object_id_to_use = base_object_id;
+            int material_id_to_use = 0;
+
             if (name.find("eyes") != std::string::npos || name.find("eye") != std::string::npos) {
-                // É um olho
                 if (pattern_str.find("Charmander") != std::string::npos) {
                     object_id_to_use = CHARMANDER_EYES;
                 } else if (pattern_str.find("Squirtle") != std::string::npos) {
                     object_id_to_use = SQUIRTLE_EYES;
                 }
             }
+            else if (name.find("BASE1") != std::string::npos) {
+                material_id_to_use = 1;
+            }
+            else if (name.find("BASE2") != std::string::npos) {
+                material_id_to_use = 2;
+            }
+            else if (name.find("BASE3") != std::string::npos) {
+                material_id_to_use = 3;
+            }
             
-            // Atualiza o object_id no shader
             glUniform1i(g_object_id_uniform, object_id_to_use);
+            glUniform1i(g_material_id_uniform, material_id_to_use);
             
             glBindVertexArray(pair.second.vertex_array_object_id);
             
@@ -838,6 +847,7 @@ void LoadShadersFromFiles()
     g_view_uniform       = glGetUniformLocation(g_GpuProgramID, "view"); // Variável da matriz "view" em shader_vertex.glsl
     g_projection_uniform = glGetUniformLocation(g_GpuProgramID, "projection"); // Variável da matriz "projection" em shader_vertex.glsl
     g_object_id_uniform  = glGetUniformLocation(g_GpuProgramID, "object_id"); // Variável "object_id" em shader_fragment.glsl
+    g_material_id_uniform = glGetUniformLocation(g_GpuProgramID, "material_id");
     g_bbox_min_uniform   = glGetUniformLocation(g_GpuProgramID, "bbox_min");
     g_bbox_max_uniform   = glGetUniformLocation(g_GpuProgramID, "bbox_max");
 
@@ -846,7 +856,10 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
-glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage6"), 6);
     glUseProgram(0);
 }
 

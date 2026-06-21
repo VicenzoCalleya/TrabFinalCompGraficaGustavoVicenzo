@@ -25,7 +25,9 @@ uniform mat4 projection;
 #define PLANE               3
 #define CHARMANDER_EYES     4
 #define SQUIRTLE_EYES       5
+#define TRAINER             6
 uniform int object_id;
+uniform int material_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
 uniform vec4 bbox_min;
@@ -36,6 +38,9 @@ uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
+uniform sampler2D TextureImage4;
+uniform sampler2D TextureImage5;
+uniform sampler2D TextureImage6;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -93,19 +98,32 @@ void main()
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(TextureImage2, vec2(U,V)).rgb;
+        Kd0 = texture(TextureImage1, vec2(U,V)).rgb;
     }
     else if ( object_id == SQUIRTLE )
     {
         U = texcoords.x;
         V = texcoords.y;
-        Kd0 = texture(TextureImage3, vec2(U,V)).rgb;
+        Kd0 = texture(TextureImage2, vec2(U,V)).rgb;
+    }
+    else if ( object_id == TRAINER )
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+        if (material_id == 1)
+            Kd0 = texture(TextureImage3, vec2(U,V)).rgb;
+        else if (material_id == 2)
+            Kd0 = texture(TextureImage4, vec2(U,V)).rgb;
+        else if (material_id == 3)
+            Kd0 = texture(TextureImage5, vec2(U,V)).rgb;
+        else
+            Kd0 = texture(TextureImage3, vec2(U,V)).rgb;
     }
     else if ( object_id == PLANE )
     {
         U = texcoords.x * 100.0f;
         V = texcoords.y * 100.0f;
-        Kd0 = texture(TextureImage1, vec2(U,V)).rgb;
+        Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
     }
     else if ( object_id == CHARMANDER_EYES )
     {
