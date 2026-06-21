@@ -19,9 +19,12 @@ uniform mat4 view;
 uniform mat4 projection;
 
 // Identificador que define qual objeto está sendo desenhado no momento
-#define SPHERE 0
-#define BUNNY  1
-#define PLANE  2
+#define SPHERE              0
+#define CHARMANDER          1
+#define SQUIRTLE            2
+#define PLANE               3
+#define CHARMANDER_EYES     4
+#define SQUIRTLE_EYES       5
 uniform int object_id;
 
 // Parâmetros da axis-aligned bounding box (AABB) do modelo
@@ -32,6 +35,7 @@ uniform vec4 bbox_max;
 uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
+uniform sampler2D TextureImage3;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -68,24 +72,11 @@ void main()
     float U = 0.0;
     float V = 0.0;
 
-	// Coeficiente de refletância difusa
-	vec3 Kd0;
+    // Coeficiente de refletância difusa
+    vec3 Kd0;
 
     if ( object_id == SPHERE )
     {
-        // PREENCHA AQUI as coordenadas de textura da esfera, computadas com
-        // projeção esférica EM COORDENADAS DO MODELO. Utilize como referência
-        // o slides 134-150 do documento Aula_20_Mapeamento_de_Texturas.pdf.
-        // A esfera que define a projeção deve estar centrada na posição
-        // "bbox_center" definida abaixo.
-
-        // Você deve utilizar:
-        //   função 'length( )' : comprimento Euclidiano de um vetor
-        //   função 'atan( , )' : arcotangente. Veja https://en.wikipedia.org/wiki/Atan2.
-        //   função 'asin( )'   : seno inverso.
-        //   constante M_PI
-        //   variável position_model
-
         vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
         vec4 d = position_model - bbox_center;
 
@@ -96,48 +87,67 @@ void main()
         U = (theta + M_PI) / 2.0 / M_PI;
         V = (phi + M_PI_2) / M_PI;
 
-		// Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
-		Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
+        Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
     }
-    else if ( object_id == BUNNY )
+    else if ( object_id == CHARMANDER )
     {
-        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
-        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
-        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
-        // e também use as variáveis min*/max* definidas abaixo para normalizar
-        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
-        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
-        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
-        // Veja também a Questão 4 do Questionário 4 no Moodle.
-
-        float minx = bbox_min.x;
-        float maxx = bbox_max.x;
-
-        float miny = bbox_min.y;
-        float maxy = bbox_max.y;
-
-        float minz = bbox_min.z;
-        float maxz = bbox_max.z;
-
-        U = (position_model.x - minx) / (maxx - minx);
-        V = (position_model.y - miny) / (maxy - miny);
-
-		// Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
-		Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = texture(TextureImage2, vec2(U,V)).rgb;
+    }
+    else if ( object_id == SQUIRTLE )
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = texture(TextureImage3, vec2(U,V)).rgb;
     }
     else if ( object_id == PLANE )
     {
-        // Coordenadas de textura do plano, obtidas do arquivo OBJ.
         U = texcoords.x * 100.0f;
         V = texcoords.y * 100.0f;
-
-		// Obtemos a refletância difusa a partir da leitura da imagem TextureImage1
-		Kd0 = texture(TextureImage1, vec2(U,V)).rgb;
+        Kd0 = texture(TextureImage1, vec2(U,V)).rgb;
+    }
+    else if ( object_id == CHARMANDER_EYES )
+    {
+        // Os olhos do Charmander: pupila + iris
+        // Normalizar position_model pela bbox para obter coordenadas 0-1
+        vec3 normalized_pos = (position_model.xyz - bbox_min.xyz) / (bbox_max.xyz - bbox_min.xyz);
+        vec2 eye_center = vec2(0.5, 0.5);
+        float dist_from_center = length(normalized_pos.xy - eye_center);
+        
+        if (dist_from_center < 0.08) {
+            // Pupila (preta bem escura)
+            Kd0 = vec3(0.02, 0.02, 0.02);
+        } else if (dist_from_center < 0.3) {
+            // Iris (branca/clara)
+            Kd0 = mix(vec3(0.95, 0.95, 0.95), vec3(0.1, 0.1, 0.1), (dist_from_center - 0.08) / 0.22);
+        } else {
+            // Branco do olho (levemente cinzento)
+            Kd0 = vec3(0.85, 0.85, 0.85);
+        }
+    }
+    else if ( object_id == SQUIRTLE_EYES )
+    {
+        // Os olhos do Squirtle: pupila + iris
+        // Normalizar position_model pela bbox para obter coordenadas 0-1
+        vec3 normalized_pos = (position_model.xyz - bbox_min.xyz) / (bbox_max.xyz - bbox_min.xyz);
+        vec2 eye_center = vec2(0.5, 0.5);
+        float dist_from_center = length(normalized_pos.xy - eye_center);
+        
+        if (dist_from_center < 0.08) {
+            // Pupila (preta bem escura)
+            Kd0 = vec3(0.02, 0.02, 0.02);
+        } else if (dist_from_center < 0.3) {
+            // Iris (branca/clara)
+            Kd0 = mix(vec3(0.95, 0.95, 0.95), vec3(0.1, 0.1, 0.1), (dist_from_center - 0.08) / 0.22);
+        } else {
+            // Branco do olho (levemente cinzento)
+            Kd0 = vec3(0.85, 0.85, 0.85);
+        }
     }
 
     // Equação de Iluminação
     float lambert = max(0,dot(n,l));
-
     color.rgb = Kd0 * (lambert + 0.01);
 
     // NOTE: Se você quiser fazer o rendering de objetos transparentes, é

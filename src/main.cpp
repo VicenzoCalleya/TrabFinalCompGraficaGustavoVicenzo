@@ -119,6 +119,7 @@ void ComputeNormals(ObjModel* model); // Computa normais de um ObjModel, caso n�
 void LoadShadersFromFiles(); // Carrega os shaders de vértice e fragmento, criando um programa de GPU
 void LoadTextureImage(const char* filename); // Função que carrega imagens de textura
 void DrawVirtualObject(const char* object_name); // Desenha um objeto armazenado em g_VirtualScene
+void DrawVirtualObjectByPattern(const char* pattern, int base_object_id); // Desenha todos os objetos que começam com um padrão
 GLuint LoadShader_Vertex(const char* filename);   // Carrega um vertex shader
 GLuint LoadShader_Fragment(const char* filename); // Carrega um fragment shader
 void LoadShader(const char* filename, GLuint shader_id); // Função utilizada pelas duas acima
@@ -264,18 +265,20 @@ struct Collider {
 // Vetor global que guarda todos os objetos sólidos do cenário
 std::vector<Collider> g_SceneColliders;
 
-#define SPHERE 0
-#define BUNNY  1
-#define PLANE  2
+#define SPHERE           0
+#define CHARMANDER       1
+#define SQUIRTLE         2
+#define PLANE            3
+#define CHARMANDER_EYES  4
+#define SQUIRTLE_EYES    5
 
 // Função que coloca todos os objetos no vetor
 void InitializeMap() {
-    // Certifique-se de limpar o vetor antes, caso a função seja chamada mais de uma vez
     g_GameWorld.clear();
 
-    // 1. O Chão
+    // 1. O Chão (mantido igual)
     GameObject chao;
-    chao.model_name = "the_plane";
+    chao.model_name = "the_plane"; // Lembre-se de checar o nome exato do plano no seu OBJ
     chao.object_id  = PLANE;
     chao.position   = glm::vec3(0.0f, -1.1f, 0.0f);
     chao.scale      = glm::vec3(100.0f, 1.0f, 100.0f); 
@@ -284,39 +287,39 @@ void InitializeMap() {
     chao.is_moving_bezier = false;
     g_GameWorld.push_back(chao);
     
-    // 2. O Coelho
-    GameObject coelho;
-    coelho.model_name = "the_bunny";
-    coelho.object_id  = BUNNY;
-    coelho.position   = glm::vec3(5.0f, 0.0f, 0.0f);
-    coelho.scale      = glm::vec3(1.0f, 1.0f, 1.0f);  
-    coelho.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
-    coelho.is_solid   = true;
-    coelho.is_moving_bezier = true;
-    coelho.p0           = glm::vec3(5.0f, 0.0f, 0.0f);   
-    coelho.p1           = glm::vec3(10.0f, 0.0f, 5.0f);  
-    coelho.p2           = glm::vec3(5.0f, 0.0f, 10.0f);  
-    coelho.t_bezier     = 0.0f;                          
-    coelho.speed_bezier = 0.2f; 
-    coelho.is_returning = false;                         
-    g_GameWorld.push_back(coelho);
+    // 2. O Charmander
+    GameObject charmander;
+    charmander.model_name = "Charmander"; // Padrão que corresponde a todos os shapes do Charmander
+    charmander.object_id  = CHARMANDER;
+    charmander.position   = glm::vec3(5.0f, -1.05f, 0.0f);
+    charmander.scale      = glm::vec3(0.02f, 0.02f, 0.02f);  
+    charmander.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
+    charmander.is_solid   = true;
+    charmander.is_moving_bezier = true;
+    charmander.p0           = glm::vec3(5.0f, -1.05f, 0.0f);   
+    charmander.p1           = glm::vec3(10.0f, -1.05f, 5.0f);  
+    charmander.p2           = glm::vec3(5.0f, -1.05f, 10.0f);  
+    charmander.t_bezier     = 0.0f;                          
+    charmander.speed_bezier = 0.2f; 
+    charmander.is_returning = false;                         
+    g_GameWorld.push_back(charmander);
 
-    // 3. Segundo coelho
-    GameObject coelho2;
-    coelho2.model_name = "the_bunny";
-    coelho2.object_id  = BUNNY;
-    coelho2.position   = glm::vec3(15.0f, 0.0f, 0.0f);
-    coelho2.scale      = glm::vec3(1.0f, 1.0f, 1.0f);  
-    coelho2.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
-    coelho2.is_solid   = true;
-    coelho2.is_moving_bezier = true;
-    coelho2.p0           = glm::vec3(15.0f, 0.0f, 0.0f);   
-    coelho2.p1           = glm::vec3(15.0f, 0.0f, 5.0f);  
-    coelho2.p2           = glm::vec3(20.0f, 0.0f, 5.0f);  
-    coelho2.t_bezier     = 0.0f;                          
-    coelho2.speed_bezier = 0.2f;
-    coelho2.is_returning = false;  
-    g_GameWorld.push_back(coelho2);
+    // 3. O Squirtle
+    GameObject squirtle;
+    squirtle.model_name = "Squirtle"; // Padrão que corresponde a todos os shapes do Squirtle
+    squirtle.object_id  = SQUIRTLE;
+    squirtle.position   = glm::vec3(15.0f, -1.05f, 0.0f);
+    squirtle.scale      = glm::vec3(0.02f, 0.02f, 0.02f);  
+    squirtle.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
+    squirtle.is_solid   = true;
+    squirtle.is_moving_bezier = true;
+    squirtle.p0           = glm::vec3(15.0f, -1.05f, 0.0f);   
+    squirtle.p1           = glm::vec3(15.0f, -1.05f, 5.0f);  
+    squirtle.p2           = glm::vec3(20.0f, -1.05f, 5.0f);  
+    squirtle.t_bezier     = 0.0f;                          
+    squirtle.speed_bezier = 0.2f;
+    squirtle.is_returning = false;  
+    g_GameWorld.push_back(squirtle);
 }
 
 int main(int argc, char* argv[])
@@ -392,22 +395,28 @@ int main(int argc, char* argv[])
     //
     LoadShadersFromFiles();
 
-    // Carregamos duas imagens para serem utilizadas como textura
-    LoadTextureImage("../../data/red_brick_diff_1k.jpg");      // TextureImage0
-    LoadTextureImage("../../data/rocky_terrain_02_diff_1k.jpg"); // TextureImage1
+// Carregamento de Texturas
+    LoadTextureImage("../../data/red_brick_diff_1k.jpg");        // TextureImage0 (Esfera)
+    LoadTextureImage("../../data/rocky_terrain_02_diff_1k.jpg"); // TextureImage1 (Plano)
+    LoadTextureImage("../../data/Charmander_BaseColor_1001.png"); // TextureImage2 (Charmander)
+    LoadTextureImage("../../data/Squirtle_BaseColor_1001.jpg");   // TextureImage3 (Squirtle)
 
-    // Construímos a representação de objetos geométricos através de malhas de triângulos
+    // Carregamento de Modelos
     ObjModel spheremodel("../../data/sphere.obj");
     ComputeNormals(&spheremodel);
     BuildTrianglesAndAddToVirtualScene(&spheremodel);
 
-    ObjModel bunnymodel("../../data/bunny.obj");
-    ComputeNormals(&bunnymodel);
-    BuildTrianglesAndAddToVirtualScene(&bunnymodel);
-
     ObjModel planemodel("../../data/plane.obj");
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
+
+    ObjModel charmandermodel("../../data/Charmander_v01.obj");
+    ComputeNormals(&charmandermodel);
+    BuildTrianglesAndAddToVirtualScene(&charmandermodel);
+
+    ObjModel squirtlemodel("../../data/Squirtle_v01.obj");
+    ComputeNormals(&squirtlemodel);
+    BuildTrianglesAndAddToVirtualScene(&squirtlemodel);
 
     if ( argc > 1 )
     {
@@ -632,7 +641,7 @@ int main(int argc, char* argv[])
                   * Matrix_Scale(obj.scale.x, obj.scale.y, obj.scale.z);
             glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             glUniform1i(g_object_id_uniform, obj.object_id);
-            DrawVirtualObject(obj.model_name.c_str());
+            DrawVirtualObjectByPattern(obj.model_name.c_str(), obj.object_id);
         }
 
         // RENDERING DE TEXTO E SWAP BUFFERS (Igual)
@@ -736,6 +745,59 @@ void DrawVirtualObject(const char* object_name)
     glBindVertexArray(0);
 }
 
+// Função auxiliar que desenha todos os objetos que contenham um padrão no nome
+// Útil para desenhar modelos com múltiplos shapes (cabeça, corpo, mãos, etc.)
+// O padrão "Charmander" vai desenhar todos os shapes que contenham "Charmander" no nome
+void DrawVirtualObjectByPattern(const char* pattern, int base_object_id)
+{
+    bool found = false;
+    std::string pattern_str(pattern);
+    
+    // Tenta desenhar todos os objetos que contenham o padrão no nome
+    for (const auto& pair : g_VirtualScene) {
+        const std::string& name = pair.first;
+        // Verifica se o nome começa com o padrão OU contém o padrão como palavra-chave
+        if (name.find(pattern_str) != std::string::npos || name.find(pattern_str) == 0) {
+            found = true;
+            
+            // Detecta se é um olho e ajusta o object_id
+            int object_id_to_use = base_object_id;
+            if (name.find("eyes") != std::string::npos || name.find("eye") != std::string::npos) {
+                // É um olho
+                if (pattern_str.find("Charmander") != std::string::npos) {
+                    object_id_to_use = CHARMANDER_EYES;
+                } else if (pattern_str.find("Squirtle") != std::string::npos) {
+                    object_id_to_use = SQUIRTLE_EYES;
+                }
+            }
+            
+            // Atualiza o object_id no shader
+            glUniform1i(g_object_id_uniform, object_id_to_use);
+            
+            glBindVertexArray(pair.second.vertex_array_object_id);
+            
+            glm::vec3 bbox_min = pair.second.bbox_min;
+            glm::vec3 bbox_max = pair.second.bbox_max;
+            glUniform4f(g_bbox_min_uniform, bbox_min.x, bbox_min.y, bbox_min.z, 1.0f);
+            glUniform4f(g_bbox_max_uniform, bbox_max.x, bbox_max.y, bbox_max.z, 1.0f);
+            
+            glDrawElements(
+                pair.second.rendering_mode,
+                pair.second.num_indices,
+                GL_UNSIGNED_INT,
+                (void*)(pair.second.first_index * sizeof(GLuint))
+            );
+        }
+    }
+    
+    glBindVertexArray(0);
+    
+    // Se nenhum encontrado com o padrão, tenta com o nome exato (para compatibilidade)
+    if (!found && g_VirtualScene.find(pattern_str) != g_VirtualScene.end()) {
+        DrawVirtualObject(pattern_str.c_str());
+    }
+}
+
 // Função que carrega os shaders de vértices e de fragmentos que serão
 // utilizados para renderização. Veja slides 180-200 do documento Aula_03_Rendering_Pipeline_Grafico.pdf.
 //
@@ -784,6 +846,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage1"), 1);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage2"), 2);
+glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage3"), 3);
     glUseProgram(0);
 }
 
