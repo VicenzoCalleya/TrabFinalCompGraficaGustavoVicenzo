@@ -273,6 +273,7 @@ std::vector<Collider> g_SceneColliders;
 #define CHARMANDER_EYES  4
 #define SQUIRTLE_EYES    5
 #define TRAINER          6
+#define TREE             7
 
 // Função que coloca todos os objetos no vetor
 void InitializeMap() {
@@ -322,6 +323,27 @@ void InitializeMap() {
     squirtle.speed_bezier = 0.2f;
     squirtle.is_returning = false;  
     g_GameWorld.push_back(squirtle);
+
+    // 4. Árvores naturais
+    float tree_positions[10][2] = {
+        { -15.0f,  12.0f }, { -10.0f,  25.0f }, { -8.0f, -10.0f },
+        {  0.0f,  18.0f }, {  6.0f,  20.0f }, { 12.0f, -12.0f },
+        { 18.0f,  14.0f }, { 22.0f, -5.0f }, { -18.0f, -8.0f },
+        { 10.0f, -18.0f }
+    };
+
+    for (int i = 0; i < 10; ++i)
+    {
+        GameObject tree;
+        tree.model_name = "Arvore";
+        tree.object_id  = TREE;
+        tree.position   = glm::vec3(tree_positions[i][0], -1.05f, tree_positions[i][1]);
+        tree.scale      = glm::vec3(0.6f, 0.6f, 0.6f);
+        tree.rotation   = glm::vec3(0.0f, 0.8f * i, 0.0f);
+        tree.is_solid   = false;
+        tree.is_moving_bezier = false;
+        g_GameWorld.push_back(tree);
+    }
 }
 
 int main(int argc, char* argv[])
@@ -404,6 +426,9 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/BASE1_Base_Color.png");         // TextureImage4 (Treinador BASE1)
     LoadTextureImage("../../data/BASE2_Base_Color.png");         // TextureImage5 (Treinador BASE2)
     LoadTextureImage("../../data/BASE3_Base_Color.png");         // TextureImage6 (Treinador BASE3)
+    LoadTextureImage("../../data/Trunck.jpg");                  // TextureImage7 (Árvore tronco)
+    LoadTextureImage("../../data/Leaves1.jpg");                 // TextureImage8 (Árvore folhas 1)
+    LoadTextureImage("../../data/Leaves_2_Cartoon.jpg");        // TextureImage9 (Árvore folhas 2)
 
     // Carregamento de Modelos
     ObjModel treinadormodel("../../data/treinador.obj");
@@ -420,6 +445,10 @@ int main(int argc, char* argv[])
     ObjModel squirtlemodel("../../data/Squirtle_v01.obj");
     ComputeNormals(&squirtlemodel);
     BuildTrianglesAndAddToVirtualScene(&squirtlemodel);
+
+    ObjModel treemodel("../../data/Arvore.obj");
+    ComputeNormals(&treemodel);
+    BuildTrianglesAndAddToVirtualScene(&treemodel);
 
     if ( argc > 1 )
     {
@@ -756,7 +785,12 @@ void DrawVirtualObjectByPattern(const char* pattern, int base_object_id)
     for (const auto& pair : g_VirtualScene) {
         const std::string& name = pair.first;
         // Verifica se o nome contém o padrão como palavra-chave
-        if (name.find(pattern_str) != std::string::npos) {
+        bool matches_pattern = (name.find(pattern_str) != std::string::npos);
+        if (!matches_pattern && pattern_str == "Arvore") {
+            matches_pattern = (name == "Vert" || name.find("Cube") != std::string::npos);
+        }
+
+        if (matches_pattern) {
             found = true;
             
             // Detecta se é um olho e ajusta o object_id
@@ -778,6 +812,18 @@ void DrawVirtualObjectByPattern(const char* pattern, int base_object_id)
             }
             else if (name.find("BASE3") != std::string::npos) {
                 material_id_to_use = 3;
+            }
+            else if (pattern_str == "Arvore") {
+                object_id_to_use = TREE;
+                if (name == "Vert") {
+                    material_id_to_use = 3;
+                }
+                else if (name == "Cube.007" || name == "Cube.006" || name == "Cube.003") {
+                    material_id_to_use = 2;
+                }
+                else if (name.find("Cube") != std::string::npos) {
+                    material_id_to_use = 1;
+                }
             }
             
             glUniform1i(g_object_id_uniform, object_id_to_use);
@@ -860,6 +906,8 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage4"), 4);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage5"), 5);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage6"), 6);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage7"), 7);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage8"), 8);
     glUseProgram(0);
 }
 

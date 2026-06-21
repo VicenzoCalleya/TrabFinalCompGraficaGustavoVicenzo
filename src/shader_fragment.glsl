@@ -26,6 +26,7 @@ uniform mat4 projection;
 #define CHARMANDER_EYES     4
 #define SQUIRTLE_EYES       5
 #define TRAINER             6
+#define TREE                7
 uniform int object_id;
 uniform int material_id;
 
@@ -41,6 +42,8 @@ uniform sampler2D TextureImage3;
 uniform sampler2D TextureImage4;
 uniform sampler2D TextureImage5;
 uniform sampler2D TextureImage6;
+uniform sampler2D TextureImage7;
+uniform sampler2D TextureImage8;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -118,6 +121,17 @@ void main()
             Kd0 = texture(TextureImage5, vec2(U,V)).rgb;
         else
             Kd0 = texture(TextureImage3, vec2(U,V)).rgb;
+    }
+    else if ( object_id == TREE )
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+        if (material_id == 3)
+            Kd0 = texture(TextureImage6, vec2(U,V)).rgb;
+        else if (material_id == 2)
+            Kd0 = texture(TextureImage8, vec2(U,V)).rgb;
+        else
+            Kd0 = texture(TextureImage7, vec2(U,V)).rgb;
     }
     else if ( object_id == PLANE )
     {
