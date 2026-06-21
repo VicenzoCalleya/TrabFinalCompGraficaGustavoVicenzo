@@ -227,10 +227,16 @@ GLint g_bbox_max_uniform;
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
 
-// Variáveis de posição do jogador (Esfera temporária)
+// Variáveis de posição do jogador
 float g_PlayerX = -1.0f;
 float g_PlayerY = -1.098f;
 float g_PlayerZ = 0.0f;
+
+// Variavel para estado de mira
+bool g_AimMode = false;
+
+// Variavel para verificar força do aremesso
+float g_RightClickDuration = 0.0f;
 
 // Estados das teclas (false = solta, true = pressionada)
 bool g_W_Pressed = false;
@@ -253,6 +259,11 @@ struct GameObject {
     float t_bezier;        // Tempo paramétrico atual
     float speed_bezier;    // Velocidade de deslocamento do t
     bool is_returning;     // Vê se ele está voltando ou não
+    bool is_pokebola;       // Identifica se o objeto é uma pokébola ativa
+    glm::vec3 launch_dir;   // Direção do arremesso
+    float force;            // Força acumulada
+    float live_time;        // Contador de tempo (limite de 5 segundos)
+    bool hit_ground;        // Se já colidiu e está estática no chão
 };
 // Vetor de objetos do mapa inteiro
 std::vector<GameObject> g_GameWorld;
@@ -261,6 +272,8 @@ std::vector<GameObject> g_GameWorld;
 struct Collider {
     glm::vec3 min;
     glm::vec3 max;
+    int object_id;       
+    size_t world_index;
 };
 
 // Vetor global que guarda todos os objetos sólidos do cenário
@@ -279,15 +292,16 @@ std::vector<Collider> g_SceneColliders;
 void InitializeMap() {
     g_GameWorld.clear();
 
-    // 1. O Chão (mantido igual)
+    // 1. O Chão 
     GameObject chao;
-    chao.model_name = "the_plane"; // Lembre-se de checar o nome exato do plano no seu OBJ
+    chao.model_name = "the_plane"; 
     chao.object_id  = PLANE;
     chao.position   = glm::vec3(0.0f, -1.1f, 0.0f);
     chao.scale      = glm::vec3(100.0f, 1.0f, 100.0f); 
     chao.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
     chao.is_solid   = false;
     chao.is_moving_bezier = false;
+    chao.is_pokebola = false;
     g_GameWorld.push_back(chao);
     
     // 2. O Charmander
@@ -304,7 +318,8 @@ void InitializeMap() {
     charmander.p2           = glm::vec3(5.0f, -1.05f, 10.0f);  
     charmander.t_bezier     = 0.0f;                          
     charmander.speed_bezier = 0.2f; 
-    charmander.is_returning = false;                         
+    charmander.is_returning = false; 
+    charmander.is_pokebola = false;                        
     g_GameWorld.push_back(charmander);
 
     // 3. O Squirtle
@@ -321,7 +336,8 @@ void InitializeMap() {
     squirtle.p2           = glm::vec3(20.0f, -1.05f, 5.0f);  
     squirtle.t_bezier     = 0.0f;                          
     squirtle.speed_bezier = 0.2f;
-    squirtle.is_returning = false;  
+    squirtle.is_returning = false;
+    squirtle.is_pokebola = false;  
     g_GameWorld.push_back(squirtle);
 
     // 4. Árvores naturais
@@ -342,6 +358,7 @@ void InitializeMap() {
         tree.rotation   = glm::vec3(0.0f, 0.8f * i, 0.0f);
         tree.is_solid   = true;
         tree.is_moving_bezier = false;
+        tree.is_pokebola = false;
         g_GameWorld.push_back(tree);
     }
 }
@@ -529,6 +546,12 @@ int main(int argc, char* argv[])
             g_AngleY = atan2f(move_direction.x, move_direction.z);
         }
 
+        if (g_AimMode) 
+        {
+            // O jogador para de girar com o movimento e encara a mira da câmera
+            g_AngleY = atan2f(camera_view_vector.x, camera_view_vector.z);
+        }
+
         // Calcula hitbox do jogador, usada depois
         glm::vec3 player_bbox_min = glm::vec3(g_PlayerX - 0.5f, g_PlayerY - 0.5f, g_PlayerZ - 0.5f);
         glm::vec3 player_bbox_max = glm::vec3(g_PlayerX + 0.5f, g_PlayerY + 0.5f, g_PlayerZ + 0.5f);
@@ -588,48 +611,214 @@ int main(int argc, char* argv[])
         }
 
         // ========================================================
-        // 4. TESTE DE COLISÃO (Valida se o movimento acima foi legal)
+        // 4. ACÚMULO DE FORÇA E LANÇAMENTO DA POKÉBOLA
+        // ========================================================
+            if (g_AimMode && g_RightMouseButtonPressed) 
+        {
+            // Enquanto segurar o botão direito no modo de mira, acumula tempo/força
+            g_RightClickDuration += delta_time;
+            // Limitador de força máxima
+            if (g_RightClickDuration > 2.0f) g_RightClickDuration = 2.0f;
+        }
+        
+        else if (g_AimMode && g_RightClickDuration > 0.0f) 
+        {
+            // Criamos uma Pokébola
+            GameObject pokebola;
+            pokebola.model_name = "Charmander"; // Placeholder
+            pokebola.object_id  = SPHERE;     // Colocar shader e nome diferente depois
+            
+            // Nasce um pouco à frente do peito do jogador para não colidir com ele mesmo
+            pokebola.position   = glm::vec3(g_PlayerX, g_PlayerY + 1.5f, g_PlayerZ + 0.5f) 
+                                + (glm::vec3(camera_view_vector.x, 0.0f, camera_view_vector.z) * 0.3f);
+            
+            pokebola.scale      = glm::vec3(0.005f, 0.005f, 0.005f);
+            pokebola.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
+            pokebola.is_solid   = false;
+
+            glm::vec4 raw_dir = glm::vec4(camera_view_vector.x, camera_view_vector.y, camera_view_vector.z, 0.0f);
+            float n = norm(raw_dir);
+
+            if (n > 0.0f) {
+                raw_dir = raw_dir / n;
+            }
+            
+            // Atributos específicos do arremesso:
+            pokebola.is_pokebola       = true;
+            pokebola.is_moving_bezier  = false;
+            pokebola.launch_dir        = glm::vec3(raw_dir.x, raw_dir.y, raw_dir.z);
+            pokebola.force             = g_RightClickDuration; 
+            pokebola.live_time         = 0.0f;                 // Começa o relógio de 5s
+            pokebola.hit_ground        = false;                // Está voando
+            g_GameWorld.push_back(pokebola);
+
+            // Reseta o acumulador para o próximo tiro
+            g_RightClickDuration = 0.0f;
+        }
+
+        for (auto& obj : g_GameWorld) 
+        {
+            if (obj.is_pokebola) 
+            {
+                obj.live_time += delta_time; 
+
+                if (!obj.hit_ground) 
+                {
+                    float gravity = 9.8f; 
+                    float launch_speed = obj.force * 20.0f; 
+
+                    obj.position.x += obj.launch_dir.x * launch_speed * delta_time;
+                    obj.position.z += obj.launch_dir.z * launch_speed * delta_time;
+
+                    float initial_vy = obj.launch_dir.y * launch_speed;
+                    float current_vy = initial_vy - (gravity * obj.live_time);
+                    obj.position.y += current_vy * delta_time;
+
+                    obj.rotation.x += 5.0f * delta_time;
+
+                    // Colisão com o chão estável
+                    if (obj.position.y <= -1.1f) 
+                    {
+                        obj.position.y = -1.1f;
+                        obj.hit_ground = true;
+                        obj.rotation.x = 0.0f;
+                    }
+
+                    // CAIXA MINÚSCULA DA POKÉBOLA
+                    glm::vec3 poke_min = obj.position - glm::vec3(0.1f, 0.1f, 0.1f);
+                    glm::vec3 poke_max = obj.position + glm::vec3(0.1f, 0.1f, 0.1f);
+
+                    // TESTE DE COLISÃO DA POKÉBOLA USANDO OS COLLIDERS DO MAPA
+                    for (const auto& collider : g_SceneColliders)
+                    {
+                        // Pegamos o centro aproximado do objeto alvo
+                        glm::vec3 target_center = (collider.min + collider.max) * 0.5f;
+
+                        // Calculamos a distância horizontal (X e Z) entre a pokébola e o objeto
+                        float dx = obj.position.x - target_center.x;
+                        float dz = obj.position.z - target_center.z;
+                        float distance_xz = sqrt(dx * dx + dz * dz);
+
+                        if (distance_xz < 0.75f && std::abs(obj.position.y - target_center.y) < 3.0f)
+                        {
+                            // 1. SE FOR POKÉMON -> CAPTURA
+                            if (collider.object_id == CHARMANDER || collider.object_id == SQUIRTLE)
+                            {
+                                g_GameWorld[collider.world_index].is_moving_bezier = false;
+                                g_GameWorld[collider.world_index].is_solid = false;
+                                g_GameWorld[collider.world_index].position.y = -10.0f; // Some com ele
+                                
+                                obj.hit_ground = true;
+                                obj.position.y = -1.1f;
+                                obj.rotation.x = 0.0f;
+                                break;
+                            }
+                            // 2. SE FOR OUTRA COISA SÓLIDA -> QUICA
+                            else
+                            {
+                                // Inversão simples de trajetória baseada de onde ela veio
+                                if (std::abs(dx) > std::abs(dz)) {
+                                    obj.launch_dir.x = -obj.launch_dir.x;
+                                } else {
+                                    obj.launch_dir.z = -obj.launch_dir.z;
+                                }
+
+                                obj.force *= 0.6f;
+                                if (obj.force < 0.4f) {
+                                    obj.hit_ground = true;
+                                    obj.position.y = -1.1f;
+                                    obj.rotation.x = 0.0f;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }   
+
+        // ========================================================
+        // 5. TESTE DE COLISÃO
         // ========================================================
         
         g_SceneColliders.clear();
 
-        // constrói caixas de colisão
-        for (const auto& obj : g_GameWorld) 
+        // 1. Constrói as caixas de colisão de tudo que é sólido no mundo
+        for (size_t i = 0; i < g_GameWorld.size(); ++i) 
         {
-            if (obj.is_solid) 
+            // Se for uma pokébola ativa voando, ela não bloqueia o jogador
+            if (g_GameWorld[i].is_pokebola && !g_GameWorld[i].hit_ground) continue;
+
+            if (g_GameWorld[i].is_solid) 
             {
                 Collider c;
-
-                c.min = g_VirtualScene[obj.model_name].bbox_min + obj.position;
-                c.max = g_VirtualScene[obj.model_name].bbox_max + obj.position;
+                c.min = g_VirtualScene[g_GameWorld[i].model_name].bbox_min + g_GameWorld[i].position;
+                c.max = g_VirtualScene[g_GameWorld[i].model_name].bbox_max + g_GameWorld[i].position;
+                c.object_id = g_GameWorld[i].object_id;
+                c.world_index = i; // Guarda a posição para a pokébola poder capturar
                 
                 g_SceneColliders.push_back(c);
             }
         }
 
-        // verifica cada caixa com o jogador
+        // 2. Verifica as colisões do JOGADOR contra a lista global
         for (const auto& collider : g_SceneColliders) 
         {
             if (CheckCollision_AABB(player_bbox_min, player_bbox_max, collider.min, collider.max)) 
             {
                 g_PlayerX = oldX;
                 g_PlayerZ = oldZ;
-                break; 
+                break;
             }
         }
 
         // ========================================================
-        // 5. ATUALIZAÇÃO DA CÂMERA (Usa a posição confirmada do jogador)
+        // 6. CLEANUP DE POKEBOLAS
+        // ========================================================
+
+        g_GameWorld.erase(
+        std::remove_if(g_GameWorld.begin(), g_GameWorld.end(),
+            [](const GameObject& obj) {
+                return obj.is_pokebola && obj.live_time > 5.0f;
+            }),
+        g_GameWorld.end()
+        );
+        
+        // ========================================================
+        // 7. ATUALIZAÇÃO DA CÂMERA (Usa a posição confirmada do jogador)
         // ========================================================
         glm::vec4 player_pos = glm::vec4(g_PlayerX, g_PlayerY, g_PlayerZ, 1.0f);
 
+        glm::vec4 camera_lookat_l = player_pos;
+
         float r = g_CameraDistance;
+        if (g_AimMode){
+            r = g_CameraDistance * 0.7f; // Zoom aproximado de mira
+            camera_lookat_l += glm::vec4(0.0f, 1.5f, 0.5f, 0.0f);
+        }
         float y = r*sin(g_CameraPhi);
         float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
         float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
 
-        camera_position_c  = player_pos + glm::vec4(x, y, z, 0.0f); 
-        camera_lookat_l    = player_pos; 
+        glm::vec4 base_camera_pos = camera_lookat_l + glm::vec4(x, y, z, 0.0f);
+
+        if (g_AimMode) 
+        {
+            glm::vec4 temporary_view = camera_lookat_l - base_camera_pos;
+            glm::vec4 right_dir = crossproduct(temporary_view, camera_up_vector);
+            if (norm(right_dir) > 0.0f) {
+                right_dir = right_dir / norm(right_dir);
+            }
+            // Desloca a posição da câmera e o ponto de olhar um pouco para a direita
+            base_camera_pos += right_dir * 0.5f; 
+            player_pos += right_dir * 0.5f; 
+        }
+
+        camera_position_c  = player_pos + glm::vec4(x, y, z, 0.0f);
+        if (camera_position_c.y < -1.0f) 
+        {
+            camera_position_c.y = -1.0f;
+        } 
         camera_view_vector = camera_lookat_l - camera_position_c; 
         camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); 
 
@@ -656,7 +845,7 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
         // ========================================================
-        // 6. DESENHO DOS MODELOS (Com as posições e matrizes 100% corrigidas)
+        // 8. DESENHO DOS MODELOS (Com as posições e matrizes 100% corrigidas)
         // ========================================================
 
         // Jogador humano controlável
@@ -1621,6 +1810,10 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         if (action == GLFW_RELEASE) g_D_Pressed = false;
     }
 
+    // Controles de mira (E)
+    if (key == GLFW_KEY_E && action == GLFW_PRESS){
+        g_AimMode = !g_AimMode;
+    }
     
 }
 
