@@ -340,7 +340,7 @@ void InitializeMap() {
         tree.position   = glm::vec3(tree_positions[i][0], -1.05f, tree_positions[i][1]);
         tree.scale      = glm::vec3(0.6f, 0.6f, 0.6f);
         tree.rotation   = glm::vec3(0.0f, 0.8f * i, 0.0f);
-        tree.is_solid   = false;
+        tree.is_solid   = true;
         tree.is_moving_bezier = false;
         g_GameWorld.push_back(tree);
     }
@@ -497,27 +497,36 @@ int main(int argc, char* argv[])
         // ========================================================
         // 2. MOVIMENTAÇÃO DO JOGADOR (Calculada primeiro)
         // ========================================================
-        float player_speed = 4.0f * delta_time;
-        float turn_speed   = 2.0f * delta_time;
-        glm::vec3 move_direction = glm::vec3(0.0f, 0.0f, 0.0f);
+       float player_speed = 4.0f * delta_time; 
+        glm::vec4 move_direction = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-        glm::vec3 facing_dir = glm::vec3(sinf(g_AngleY), 0.0f, cosf(g_AngleY));
+        // Extraímos a direção para onde a CÂMERA está olhando no plano horizontal (X, Z)
+        glm::vec4 forward_dir = glm::vec4(camera_view_vector.x, 0.0f, camera_view_vector.z, 0.0f);
+        if (norm(forward_dir) > 0.0f) {
+            forward_dir = forward_dir / norm(forward_dir);
+        }
 
-        if (g_W_Pressed) move_direction += facing_dir;
-        if (g_S_Pressed) move_direction -= facing_dir;
-        if (g_A_Pressed) g_AngleY += turn_speed;
-        if (g_D_Pressed) g_AngleY -= turn_speed;
+        glm::vec4 right_dir = crossproduct(forward_dir, camera_up_vector); 
+        if (norm(right_dir) > 0.0f) {
+            right_dir = right_dir / norm(right_dir);
+        }
+
+        if (g_W_Pressed) move_direction += forward_dir;
+        if (g_S_Pressed) move_direction -= forward_dir;
+        if (g_A_Pressed) move_direction -= right_dir;
+        if (g_D_Pressed) move_direction += right_dir;
 
         // Guarda posição antiga antes de aplicar o movimento
         float oldX = g_PlayerX;
         float oldZ = g_PlayerZ;
 
-        float move_length = glm::length(move_direction);
-        if (move_length > 0.0f)
+        if (norm(move_direction) > 0.0f)
         {
-            move_direction = move_direction / move_length;
+            move_direction = move_direction / norm(move_direction);
             g_PlayerX += move_direction.x * player_speed;
             g_PlayerZ += move_direction.z * player_speed;
+
+            g_AngleY = atan2f(move_direction.x, move_direction.z);
         }
 
         // Calcula hitbox do jogador, usada depois
