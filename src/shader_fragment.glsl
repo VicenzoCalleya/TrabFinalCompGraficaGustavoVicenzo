@@ -36,6 +36,8 @@ uniform int material_id;
 uniform vec4 bbox_min;
 uniform vec4 bbox_max;
 
+uniform bool is_shadow;
+
 // Variáveis para acesso das imagens de textura
 uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
@@ -56,6 +58,11 @@ out vec4 color;
 
 void main()
 {
+    if (is_shadow) {
+        color = vec4(0.1, 0.1, 0.1, 1.0); // Cor da sombra (cinza escuro)
+        return; // Interrompe o resto da iluminação/texturas para poupar processamento
+    }
+
     // Obtemos a posição da câmera utilizando a inversa da matriz que define o
     // sistema de coordenadas da câmera.
     vec4 origin = vec4(0.0, 0.0, 0.0, 1.0);
@@ -84,7 +91,7 @@ void main()
 
     // Coeficiente de refletância difusa
     vec3 Kd0;
-
+    
     if ( object_id == SPHERE )
     {
         vec4 bbox_center = (bbox_min + bbox_max) / 2.0;

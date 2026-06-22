@@ -223,6 +223,7 @@ GLint g_object_id_uniform;
 GLint g_material_id_uniform;
 GLint g_bbox_min_uniform;
 GLint g_bbox_max_uniform;
+GLint g_is_shadow_uniform;
 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
@@ -921,7 +922,51 @@ int main(int argc, char* argv[])
             glUniform1i(g_object_id_uniform, obj.object_id);
             DrawVirtualObjectByPattern(obj.model_name.c_str(), obj.object_id);
         }
+        glm::vec4 light_dir = glm::vec4(1.0f, 1.0f, 0.0f, 0.0f); 
+        float ground_y = -1.095f; 
 
+        glm::mat4 S = Matrix_Identity();
+        if (light_dir.y != 0.0f) {
+            S[1][0] = -light_dir.x / light_dir.y;
+            S[1][1] = 0.0f;
+            S[1][2] = -light_dir.z / light_dir.y;
+            S[3][0] = ground_y * (light_dir.x / light_dir.y);
+            S[3][1] = ground_y;
+            S[3][2] = ground_y * (light_dir.z / light_dir.y);
+        }
+
+        glUniform1i(g_is_shadow_uniform, 1); 
+        glDisable(GL_CULL_FACE); 
+
+        // Sombra do treinador
+        glm::mat4 player_model = Matrix_Translate(g_PlayerX, ground_y, g_PlayerZ)
+                               * Matrix_Rotate_Y(g_AngleY)
+                               * Matrix_Scale(0.3f, 0.3f, 0.3f);
+        glm::mat4 player_shadow = S * player_model;
+        glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(player_shadow));
+        glUniform1i(g_object_id_uniform, TRAINER);
+        DrawVirtualObjectByPattern("BASE", TRAINER);
+
+        // Sombra dos objetos
+        for (const auto& obj : g_GameWorld)
+        {
+            if (obj.object_id == PLANE || obj.object_id == GRASS) continue;
+
+            glm::mat4 obj_model = Matrix_Translate(obj.position.x, obj.position.y, obj.position.z)
+                                * Matrix_Rotate_Y(obj.rotation.y)
+                                * Matrix_Rotate_X(obj.rotation.x)
+                                * Matrix_Rotate_Z(obj.rotation.z)
+                                * Matrix_Scale(obj.scale.x, obj.scale.y, obj.scale.z);
+
+            glm::mat4 obj_shadow = S * obj_model;
+            glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(obj_shadow));
+            glUniform1i(g_object_id_uniform, obj.object_id);
+            DrawVirtualObjectByPattern(obj.model_name.c_str(), obj.object_id);
+        }
+
+        glEnable(GL_CULL_FACE);
+        glUniform1i(g_is_shadow_uniform, 0);
+        
         // RENDERING DE TEXTO E SWAP BUFFERS (Igual)
         TextRendering_ShowEulerAngles(window);
         TextRendering_ShowProjection(window);
@@ -1166,6 +1211,7 @@ void LoadShadersFromFiles()
     g_material_id_uniform = glGetUniformLocation(g_GpuProgramID, "material_id");
     g_bbox_min_uniform   = glGetUniformLocation(g_GpuProgramID, "bbox_min");
     g_bbox_max_uniform   = glGetUniformLocation(g_GpuProgramID, "bbox_max");
+    g_is_shadow_uniform  = glGetUniformLocation(g_GpuProgramID, "is_shadow");
 
     // Variáveis em "shader_fragment.glsl" para acesso das imagens de textura
     glUseProgram(g_GpuProgramID);
