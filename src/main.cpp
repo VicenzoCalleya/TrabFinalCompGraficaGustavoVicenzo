@@ -288,6 +288,7 @@ std::vector<Collider> g_SceneColliders;
 #define TRAINER          6
 #define TREE             7
 #define GRASS            8
+#define POKEBALL         9
 
 // Função que coloca todos os objetos no vetor
 void InitializeMap() {
@@ -504,6 +505,19 @@ int main(int argc, char* argv[])
     ComputeNormals(&grassmodel);
     BuildTrianglesAndAddToVirtualScene(&grassmodel);
 
+    ObjModel pokeballmodel("../../data/pokeball.obj");
+    for (size_t shape = 0; shape < pokeballmodel.shapes.size(); ++shape)
+    {
+        std::string base_name = "pokeball_" + std::to_string(shape);
+        if (!pokeballmodel.shapes[shape].name.empty()) {
+            pokeballmodel.shapes[shape].name = base_name + "_" + pokeballmodel.shapes[shape].name;
+        } else {
+            pokeballmodel.shapes[shape].name = base_name;
+        }
+    }
+    ComputeNormals(&pokeballmodel);
+    BuildTrianglesAndAddToVirtualScene(&pokeballmodel);
+
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
@@ -662,14 +676,14 @@ int main(int argc, char* argv[])
         {
             // Criamos uma Pokébola
             GameObject pokebola;
-            pokebola.model_name = "Charmander"; // Placeholder
-            pokebola.object_id  = SPHERE;     // Colocar shader e nome diferente depois
+            pokebola.model_name = "pokeball";
+            pokebola.object_id  = POKEBALL;
             
             // Nasce um pouco à frente do peito do jogador para não colidir com ele mesmo
             pokebola.position   = glm::vec3(g_PlayerX, g_PlayerY + 1.5f, g_PlayerZ + 0.5f) 
                                 + (glm::vec3(camera_view_vector.x, 0.0f, camera_view_vector.z) * 0.3f);
             
-            pokebola.scale      = glm::vec3(0.005f, 0.005f, 0.005f);
+            pokebola.scale      = glm::vec3(0.1f, 0.1f, 0.1f);
             pokebola.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
             pokebola.is_solid   = false;
 
@@ -714,16 +728,14 @@ int main(int argc, char* argv[])
                     obj.rotation.x += 5.0f * delta_time;
 
                     // Colisão com o chão estável
-                    if (obj.position.y <= -1.1f) 
+                    float pokeball_radius = 1.0f * obj.scale.y;
+                    float ground_y = -1.0f + pokeball_radius;
+                    if (obj.position.y <= ground_y) 
                     {
-                        obj.position.y = -1.1f;
+                        obj.position.y = ground_y;
                         obj.hit_ground = true;
                         obj.rotation.x = 0.0f;
                     }
-
-                    // CAIXA MINÚSCULA DA POKÉBOLA
-                    glm::vec3 poke_min = obj.position - glm::vec3(0.1f, 0.1f, 0.1f);
-                    glm::vec3 poke_max = obj.position + glm::vec3(0.1f, 0.1f, 0.1f);
 
                     // TESTE DE COLISÃO DA POKÉBOLA USANDO OS COLLIDERS DO MAPA
                     for (const auto& collider : g_SceneColliders)
@@ -745,8 +757,10 @@ int main(int argc, char* argv[])
                                 g_GameWorld[collider.world_index].is_solid = false;
                                 g_GameWorld[collider.world_index].position.y = -10.0f; // Some com ele
                                 
+                                float pokeball_radius = 1.0f * obj.scale.y;
+                                float ground_y = -1.0f + pokeball_radius;
                                 obj.hit_ground = true;
-                                obj.position.y = -1.1f;
+                                obj.position.y = ground_y;
                                 obj.rotation.x = 0.0f;
                                 break;
                             }
@@ -762,8 +776,10 @@ int main(int argc, char* argv[])
 
                                 obj.force *= 0.6f;
                                 if (obj.force < 0.4f) {
+                                    float pokeball_radius = 1.0f * obj.scale.y;
+                                    float ground_y = -1.0f + pokeball_radius;
                                     obj.hit_ground = true;
-                                    obj.position.y = -1.1f;
+                                    obj.position.y = ground_y;
                                     obj.rotation.x = 0.0f;
                                 }
                                 break;
@@ -1015,6 +1031,10 @@ void DrawVirtualObjectByPattern(const char* pattern, int base_object_id)
 {
     bool found = false;
     std::string pattern_str(pattern);
+    bool was_cull_enabled = glIsEnabled(GL_CULL_FACE);
+    if (base_object_id == POKEBALL) {
+        glDisable(GL_CULL_FACE);
+    }
     
     // Tenta desenhar todos os objetos que contenham o padrão no nome
     for (const auto& pair : g_VirtualScene) {
@@ -1047,6 +1067,17 @@ void DrawVirtualObjectByPattern(const char* pattern, int base_object_id)
             }
             else if (name.find("BASE3") != std::string::npos) {
                 material_id_to_use = 3;
+            }
+            else if (pattern_str == "pokeball") {
+                if (name.find("pokeball_0") != std::string::npos) {
+                    material_id_to_use = 1;
+                }
+                else if (name.find("pokeball_1") != std::string::npos) {
+                    material_id_to_use = 2;
+                }
+                else if (name.find("pokeball_2") != std::string::npos) {
+                    material_id_to_use = 3;
+                }
             }
             else if (pattern_str == "Arvore") {
                 object_id_to_use = TREE;
@@ -1081,6 +1112,10 @@ void DrawVirtualObjectByPattern(const char* pattern, int base_object_id)
     }
     
     glBindVertexArray(0);
+
+    if (base_object_id == POKEBALL && was_cull_enabled) {
+        glEnable(GL_CULL_FACE);
+    }
     
     // Se nenhum encontrado com o padrão, tenta com o nome exato (para compatibilidade)
     if (!found && g_VirtualScene.find(pattern_str) != g_VirtualScene.end()) {

@@ -28,6 +28,7 @@ uniform mat4 projection;
 #define TRAINER             6
 #define TREE                7
 #define GRASS               8
+#define POKEBALL            9
 uniform int object_id;
 uniform int material_id;
 
@@ -139,6 +140,18 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(TextureImage8, vec2(U,V)).rgb;
+    }
+    else if ( object_id == POKEBALL )
+    {
+        if (material_id == 1) {
+            Kd0 = vec3(0.95, 0.95, 0.95);
+        } else if (material_id == 2) {
+            Kd0 = vec3(0.85, 0.05, 0.05);
+        } else if (material_id == 3) {
+            Kd0 = vec3(0.05, 0.05, 0.05);
+        } else {
+            Kd0 = vec3(0.9, 0.9, 0.9);
+        }
     }
     else if ( object_id == PLANE )
     {
