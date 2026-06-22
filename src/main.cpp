@@ -265,6 +265,7 @@ struct GameObject {
     float force;            // Força acumulada
     float live_time;        // Contador de tempo (limite de 5 segundos)
     bool hit_ground;        // Se já colidiu e está estática no chão
+    bool is_captured = false; // Foi capturado
 };
 // Vetor de objetos do mapa inteiro
 std::vector<GameObject> g_GameWorld;
@@ -305,6 +306,7 @@ void InitializeMap() {
     chao.is_solid   = false;
     chao.is_moving_bezier = false;
     chao.is_pokebola = false;
+    chao.is_captured = false;
     g_GameWorld.push_back(chao);
     
     // 2. O Charmander
@@ -322,7 +324,8 @@ void InitializeMap() {
     charmander.t_bezier     = 0.0f;                          
     charmander.speed_bezier = 0.2f; 
     charmander.is_returning = false; 
-    charmander.is_pokebola = false;                        
+    charmander.is_pokebola = false;             
+    charmander.is_captured = false;           
     g_GameWorld.push_back(charmander);
 
     // 3. O Squirtle
@@ -341,6 +344,7 @@ void InitializeMap() {
     squirtle.speed_bezier = 0.2f;
     squirtle.is_returning = false;
     squirtle.is_pokebola = false;  
+    squirtle.is_captured = false;           
     g_GameWorld.push_back(squirtle);
 
     // 4. Árvores naturais
@@ -362,6 +366,7 @@ void InitializeMap() {
         tree.is_solid   = true;
         tree.is_moving_bezier = false;
         tree.is_pokebola = false;
+        squirtle.is_captured = false;
         g_GameWorld.push_back(tree);
     }
 
@@ -385,6 +390,7 @@ void InitializeMap() {
         grass.is_solid   = false;
         grass.is_moving_bezier = false;
         grass.is_pokebola = false;
+        squirtle.is_captured = false;
         g_GameWorld.push_back(grass);
     }
 }
@@ -757,6 +763,7 @@ int main(int argc, char* argv[])
                                 g_GameWorld[collider.world_index].is_moving_bezier = false;
                                 g_GameWorld[collider.world_index].is_solid = false;
                                 g_GameWorld[collider.world_index].position.y = -10.0f; // Some com ele
+                                g_GameWorld[collider.world_index].is_captured = true;
                                 
                                 float pokeball_radius = 1.0f * obj.scale.y;
                                 float ground_y = -1.0f + pokeball_radius;
@@ -802,7 +809,7 @@ int main(int argc, char* argv[])
         {
             // Se for uma pokébola ativa voando, ela não bloqueia o jogador
             if (g_GameWorld[i].is_pokebola && !g_GameWorld[i].hit_ground) continue;
-
+            if (g_GameWorld[i].is_captured) continue;
             if (g_GameWorld[i].is_solid) 
             {
                 Collider c;
@@ -913,6 +920,7 @@ int main(int argc, char* argv[])
         // Todos os outros objetos
         for (const auto& obj : g_GameWorld)
         {
+            if (obj.is_captured) continue;
             model = Matrix_Translate(obj.position.x, obj.position.y, obj.position.z)
                   * Matrix_Rotate_Y(obj.rotation.y)
                   * Matrix_Rotate_X(obj.rotation.x)
@@ -976,7 +984,7 @@ int main(int argc, char* argv[])
         // Sombra global dos objetos
         for (const auto& obj : g_GameWorld) {
             if (obj.object_id == PLANE || obj.object_id == GRASS) continue;
-
+            if (obj.is_captured) continue;
             glm::mat4 obj_model = Matrix_Translate(obj.position.x, obj.position.y, obj.position.z)
                                 * Matrix_Rotate_Y(obj.rotation.y)
                                 * Matrix_Rotate_X(obj.rotation.x)
@@ -1021,7 +1029,7 @@ int main(int argc, char* argv[])
             // 2. Sombra radial dos objetos
             for (const auto& obj : g_GameWorld) {
                 if (obj.object_id == PLANE || obj.object_id == GRASS || obj.is_pokebola) continue;
-
+                if (obj.is_captured) continue;
                 // Só desenha se estiver próximo da luz da pokébola (otimização)
                 if (glm::distance(glm::vec2(obj.position.x, obj.position.z), glm::vec2(pb_light_pos.x, pb_light_pos.z)) > pb_radius * 1.5f) continue;
 
