@@ -256,7 +256,8 @@ struct GameObject {
     bool is_moving_bezier; // true = objeto move com curva de bézier
     glm::vec3 p0;          // Ponto inicial
     glm::vec3 p1;          // Ponto de controle
-    glm::vec3 p2;          // Ponto final
+    glm::vec3 p2;          // Ponto de de controle 2
+    glm::vec3 p3;          // ponto final
     float t_bezier;        // Tempo paramétrico atual
     float speed_bezier;    // Velocidade de deslocamento do t
     bool is_returning;     // Vê se ele está voltando ou não
@@ -318,15 +319,35 @@ void InitializeMap() {
     charmander.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
     charmander.is_solid   = true;
     charmander.is_moving_bezier = true;
-    charmander.p0           = glm::vec3(5.0f, -1.05f, 0.0f);   
-    charmander.p1           = glm::vec3(10.0f, -1.05f, 5.0f);  
-    charmander.p2           = glm::vec3(5.0f, -1.05f, 10.0f);  
+    charmander.p0           = glm::vec3(-10.0f, -1.05f, -5.0f);   
+    charmander.p1           = glm::vec3(-5.0f, -1.05f, 5.0f);  
+    charmander.p2           = glm::vec3(5.0f, -1.05f, -5.0f);  
+    charmander.p3           = glm::vec3(10.0f, -1.05f, 5.0f);  
     charmander.t_bezier     = 0.0f;                          
     charmander.speed_bezier = 0.2f; 
     charmander.is_returning = false; 
     charmander.is_pokebola = false;             
     charmander.is_captured = false;           
     g_GameWorld.push_back(charmander);
+
+    GameObject charmander2;
+    charmander2.model_name = "Charmander"; // Padrão que corresponde a todos os shapes do Charmander
+    charmander2.object_id  = CHARMANDER;
+    charmander2.position   = glm::vec3(5.0f, -1.05f, 0.0f);
+    charmander2.scale      = glm::vec3(0.02f, 0.02f, 0.02f);  
+    charmander2.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
+    charmander2.is_solid   = true;
+    charmander2.is_moving_bezier = true;
+    charmander2.p0           = glm::vec3(5.0f, -1.05f, -10.0f);   
+    charmander2.p1           = glm::vec3(0.0f, -1.05f, 0.0f);  
+    charmander2.p2           = glm::vec3(-5.0f, -1.05f, 5.0f);  
+    charmander2.p3           = glm::vec3(15.0f, -1.05f, 0.0f);  
+    charmander2.t_bezier     = 0.0f;                          
+    charmander2.speed_bezier = 0.2f; 
+    charmander2.is_returning = false; 
+    charmander2.is_pokebola = false;             
+    charmander2.is_captured = false;           
+    g_GameWorld.push_back(charmander2);
 
     // 3. O Squirtle
     GameObject squirtle;
@@ -339,7 +360,8 @@ void InitializeMap() {
     squirtle.is_moving_bezier = true;
     squirtle.p0           = glm::vec3(15.0f, -1.05f, 0.0f);   
     squirtle.p1           = glm::vec3(15.0f, -1.05f, 5.0f);  
-    squirtle.p2           = glm::vec3(20.0f, -1.05f, 5.0f);  
+    squirtle.p2           = glm::vec3(20.0f, -1.05f, 5.0f);
+    squirtle.p3           = glm::vec3(25.0f, -1.05f, 0.0f);
     squirtle.t_bezier     = 0.0f;                          
     squirtle.speed_bezier = 0.2f;
     squirtle.is_returning = false;
@@ -347,15 +369,38 @@ void InitializeMap() {
     squirtle.is_captured = false;           
     g_GameWorld.push_back(squirtle);
 
+    GameObject squirtle2;
+    squirtle2.model_name = "Squirtle"; // Padrão que corresponde a todos os shapes do Squirtle
+    squirtle2.object_id  = SQUIRTLE;
+    squirtle2.position   = glm::vec3(15.0f, -1.05f, 0.0f);
+    squirtle2.scale      = glm::vec3(0.02f, 0.02f, 0.02f);  
+    squirtle2.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
+    squirtle2.is_solid   = true;
+    squirtle2.is_moving_bezier = true;
+    squirtle2.p0           = glm::vec3(-20.0f, -1.05f, -5.0f);   
+    squirtle2.p1           = glm::vec3(-15.0f, -1.05f, -5.0f);  
+    squirtle2.p2           = glm::vec3(10.0f, -1.05f, 5.0f);
+    squirtle2.p3           = glm::vec3(0.0f, -1.05f, -10.0f);
+    squirtle2.t_bezier     = 0.0f;                          
+    squirtle2.speed_bezier = 0.2f;
+    squirtle2.is_returning = false;
+    squirtle2.is_pokebola = false;  
+    squirtle2.is_captured = false;           
+    g_GameWorld.push_back(squirtle2);
+
+
     // 4. Árvores naturais
-    float tree_positions[10][2] = {
+    float tree_positions[20][2] = {
         { -15.0f,  12.0f }, { -10.0f,  25.0f }, { -8.0f, -10.0f },
         {  0.0f,  18.0f }, {  6.0f,  20.0f }, { 12.0f, -12.0f },
         { 18.0f,  14.0f }, { 22.0f, -5.0f }, { -18.0f, -8.0f },
-        { 10.0f, -18.0f }
+        { 10.0f, -18.0f }, { -5.0f,  15.0f }, { 5.0f,   25.0f },
+        { 15.0f,   5.0f }, { -15.0f, -5.0f }, { -5.0f, -25.0f },
+        { 5.0f, -15.0f }, { 15.0f, -25.0f }, { -15.0f, 25.0f },
+        { -5.0f,   5.0f }, { 5.0f,   15.0f }
     };
 
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 20; ++i)
     {
         GameObject tree;
         tree.model_name = "Arvore";
@@ -376,10 +421,15 @@ void InitializeMap() {
         glm::vec3(-9.0f, -1.05f, 24.0f),
         glm::vec3(3.0f, -1.05f, 17.0f),
         glm::vec3(17.0f, -1.05f, -10.0f),
-        glm::vec3(-16.0f, -1.05f, -6.0f)
+        glm::vec3(-16.0f, -1.05f, -6.0f),
+        glm::vec3(-4.0f, -1.05f, -20.0f),
+        glm::vec3(0.0f, -1.05f, -15.0f),
+        glm::vec3(10.0f, -1.05f, -20.0f),
+        glm::vec3(-10.0f, -1.05f, 10.0f),
+        glm::vec3(20.0f, -1.05f, 20.0f)
     };
 
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 10; ++i)
     {
         GameObject grass;
         grass.model_name = "simple_grass";
@@ -639,11 +689,15 @@ int main(int argc, char* argv[])
                 }
 
                 float t = obj.t_bezier;
-                
+                float inv_t  = 1.0f - t;
+
+                float b0 = inv_t * inv_t * inv_t;
+                float b1 = 3.0f * inv_t * inv_t * t;
+                float b2 = 3.0f * inv_t * t * t;  
+                float b3 = t * t * t;
+
                 //fórmula de Bézier
-                obj.position = (1.0f - t) * (1.0f - t) * obj.p0
-                             + 2.0f * (1.0f - t) * t * obj.p1
-                             + t * t * obj.p2;
+                obj.position = b0 * obj.p0 + b1 * obj.p1 + b2 * obj.p2 + b3 * obj.p3;
 
                 // Hitbox temporária para objeto
                 glm::vec3 obj_min = g_VirtualScene[obj.model_name].bbox_min + obj.position;
@@ -656,8 +710,7 @@ int main(int argc, char* argv[])
                 }
                 else // cálculo de rotação para ele ficar de frente com o caminho que está andando
                 {
-                    glm::vec3 direction = 2.0f * (1.0f - t) * (obj.p1 - obj.p0)
-                                        + 2.0f * t * (obj.p2 - obj.p1);
+                    glm::vec3 direction = 3.0f * inv_t * inv_t * (obj.p1 - obj.p0) + 6.0f * inv_t * t * (obj.p2 - obj.p1) + 3.0f * t * t * (obj.p3 - obj.p2);
                     
                     if (obj.is_returning) {
                         direction = -direction;
