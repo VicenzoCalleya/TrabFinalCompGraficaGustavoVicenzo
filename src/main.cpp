@@ -287,6 +287,7 @@ std::vector<Collider> g_SceneColliders;
 #define SQUIRTLE_EYES    5
 #define TRAINER          6
 #define TREE             7
+#define GRASS            8
 
 // Função que coloca todos os objetos no vetor
 void InitializeMap() {
@@ -360,6 +361,29 @@ void InitializeMap() {
         tree.is_moving_bezier = false;
         tree.is_pokebola = false;
         g_GameWorld.push_back(tree);
+    }
+
+    // 5. Capins que permitem ao jogador se esconder sem bloquear movimento.
+    const glm::vec3 grass_positions[] = {
+        glm::vec3(-14.0f, -1.05f, 11.0f),
+        glm::vec3(-9.0f, -1.05f, 24.0f),
+        glm::vec3(3.0f, -1.05f, 17.0f),
+        glm::vec3(17.0f, -1.05f, -10.0f),
+        glm::vec3(-16.0f, -1.05f, -6.0f)
+    };
+
+    for (int i = 0; i < 5; ++i)
+    {
+        GameObject grass;
+        grass.model_name = "simple_grass";
+        grass.object_id  = GRASS;
+        grass.position   = grass_positions[i];
+        grass.scale      = glm::vec3(0.60f, 0.60f, 0.60f);
+        grass.rotation   = glm::vec3(0.0f, 0.4f * i, 0.0f);
+        grass.is_solid   = false;
+        grass.is_moving_bezier = false;
+        grass.is_pokebola = false;
+        g_GameWorld.push_back(grass);
     }
 }
 
@@ -466,6 +490,19 @@ int main(int argc, char* argv[])
     ObjModel treemodel("../../data/Arvore.obj");
     ComputeNormals(&treemodel);
     BuildTrianglesAndAddToVirtualScene(&treemodel);
+
+    ObjModel grassmodel("../../data/simple_grass.obj");
+    for (size_t shape = 0; shape < grassmodel.shapes.size(); ++shape)
+    {
+        std::string base_name = "simple_grass_" + std::to_string(shape);
+        if (!grassmodel.shapes[shape].name.empty()) {
+            grassmodel.shapes[shape].name = base_name + "_" + grassmodel.shapes[shape].name;
+        } else {
+            grassmodel.shapes[shape].name = base_name;
+        }
+    }
+    ComputeNormals(&grassmodel);
+    BuildTrianglesAndAddToVirtualScene(&grassmodel);
 
     if ( argc > 1 )
     {

@@ -27,6 +27,7 @@ uniform mat4 projection;
 #define SQUIRTLE_EYES       5
 #define TRAINER             6
 #define TREE                7
+#define GRASS               8
 uniform int object_id;
 uniform int material_id;
 
@@ -132,6 +133,12 @@ void main()
             Kd0 = texture(TextureImage8, vec2(U,V)).rgb;
         else
             Kd0 = texture(TextureImage7, vec2(U,V)).rgb;
+    }
+    else if ( object_id == GRASS )
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = texture(TextureImage8, vec2(U,V)).rgb;
     }
     else if ( object_id == PLANE )
     {
