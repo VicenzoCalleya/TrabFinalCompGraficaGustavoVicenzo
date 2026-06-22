@@ -768,6 +768,7 @@ int main(int argc, char* argv[])
                                 float pokeball_radius = 1.0f * obj.scale.y;
                                 float ground_y = -1.0f + pokeball_radius;
                                 obj.hit_ground = true;
+                                obj.is_captured = true;
                                 obj.position.y = ground_y;
                                 obj.rotation.x = 0.0f;
                                 break;
@@ -920,7 +921,7 @@ int main(int argc, char* argv[])
         // Todos os outros objetos
         for (const auto& obj : g_GameWorld)
         {
-            if (obj.is_captured) continue;
+            if (obj.is_captured && !obj.is_pokebola) continue;
             model = Matrix_Translate(obj.position.x, obj.position.y, obj.position.z)
                   * Matrix_Rotate_Y(obj.rotation.y)
                   * Matrix_Rotate_X(obj.rotation.x)
@@ -937,7 +938,7 @@ int main(int argc, char* argv[])
         bool has_active_pokeball = false;
         glm::vec3 active_pokeball_pos(0.0f);
         for (const auto& obj : g_GameWorld) {
-            if (obj.is_pokebola && obj.hit_ground) {
+            if (obj.is_pokebola && obj.hit_ground && obj.is_captured) {
                 has_active_pokeball = true;
                 active_pokeball_pos = obj.position;
                 break; // Usa a primeira que encontrar
@@ -984,7 +985,7 @@ int main(int argc, char* argv[])
         // Sombra global dos objetos
         for (const auto& obj : g_GameWorld) {
             if (obj.object_id == PLANE || obj.object_id == GRASS) continue;
-            if (obj.is_captured) continue;
+            if (obj.is_captured && !obj.is_pokebola) continue;
             glm::mat4 obj_model = Matrix_Translate(obj.position.x, obj.position.y, obj.position.z)
                                 * Matrix_Rotate_Y(obj.rotation.y)
                                 * Matrix_Rotate_X(obj.rotation.x)
@@ -1029,7 +1030,7 @@ int main(int argc, char* argv[])
             // 2. Sombra radial dos objetos
             for (const auto& obj : g_GameWorld) {
                 if (obj.object_id == PLANE || obj.object_id == GRASS || obj.is_pokebola) continue;
-                if (obj.is_captured) continue;
+                if (obj.is_captured && !obj.is_pokebola) continue;
                 // Só desenha se estiver próximo da luz da pokébola (otimização)
                 if (glm::distance(glm::vec2(obj.position.x, obj.position.z), glm::vec2(pb_light_pos.x, pb_light_pos.z)) > pb_radius * 1.5f) continue;
 
