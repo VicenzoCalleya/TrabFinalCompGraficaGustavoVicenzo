@@ -38,6 +38,10 @@ uniform vec4 bbox_max;
 
 uniform bool is_shadow;
 
+uniform vec3 pokeball_pos;
+uniform float pokeball_radius;
+uniform int shadow_type;
+
 // Variáveis para acesso das imagens de textura
 uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
@@ -59,8 +63,23 @@ out vec4 color;
 void main()
 {
     if (is_shadow) {
-        color = vec4(0.1, 0.1, 0.1, 1.0); // Cor da sombra (cinza escuro)
-        return; // Interrompe o resto da iluminação/texturas para poupar processamento
+        if (pokeball_radius > 0.0) {
+            // position_world divido por W é boa prática matemática
+            vec2 p_xz = position_world.xz / position_world.w;
+            float dist = distance(p_xz, pokeball_pos.xz);
+            
+            // Máscara Circular: apaga a sombra do sol dentro do raio, 
+            // e apaga a sombra da pokébola fora do raio.
+            if (shadow_type == 0 && dist < pokeball_radius) {
+                discard; 
+            } else if (shadow_type == 1 && dist > pokeball_radius) {
+                discard; 
+            }
+        }
+        
+        // Cor da sombra (cinza escuro)
+        color = vec4(0.1, 0.1, 0.1, 1.0);
+        return; 
     }
 
     // Obtemos a posição da câmera utilizando a inversa da matriz que define o
@@ -205,9 +224,27 @@ void main()
         }
     }
 
-    // Equação de Iluminação
-    float lambert = max(0,dot(n,l));
-    color.rgb = Kd0 * (lambert + 0.01);
+// Equação de Iluminação
+    float lambert = max(0.0, dot(n,l));
+    vec3 final_color = Kd0 * (lambert + 0.01);
+
+    // Se houver uma pokébola ativa, ilumina a área ao redor dela
+    if (pokeball_radius > 0.0) {
+        vec3 p_world = position_world.xyz / position_world.w;
+        float dist = distance(p_world.xz, pokeball_pos.xz);
+        
+        // Vetor de luz pontual vindo da pokébola
+        vec3 light_dir_pb = normalize(vec3(pokeball_pos.x, pokeball_pos.y + 1.0, pokeball_pos.z) - p_world);
+        float lambert_pb = max(0.0, dot(n.xyz, light_dir_pb));
+        
+        // Atenuação radial da luz (vai perdendo a força até a borda)
+        float atenuacao = smoothstep(pokeball_radius, 0.0, dist);
+        
+        // Adicionando um brilho à cor base
+        final_color += Kd0 * lambert_pb * atenuacao * 0.8;
+    }
+
+    color.rgb = final_color;
 
     // NOTE: Se você quiser fazer o rendering de objetos transparentes, é
     // necessário:

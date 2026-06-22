@@ -922,8 +922,35 @@ int main(int argc, char* argv[])
             glUniform1i(g_object_id_uniform, obj.object_id);
             DrawVirtualObjectByPattern(obj.model_name.c_str(), obj.object_id);
         }
+// ========================================================
+        // PREPARAÇÃO PARA O SISTEMA DE SOMBRAS
+        // ========================================================
+        // 1. Encontra a Pokébola (se existir e estiver no chão)
+        bool has_active_pokeball = false;
+        glm::vec3 active_pokeball_pos(0.0f);
+        for (const auto& obj : g_GameWorld) {
+            if (obj.is_pokebola && obj.hit_ground) {
+                has_active_pokeball = true;
+                active_pokeball_pos = obj.position;
+                break; // Usa a primeira que encontrar
+            }
+        }
+        float pb_radius = 6.0f; // Tamanho da área afetada
+
+        // Envia dados para o Shader
+        glUniform3f(glGetUniformLocation(g_GpuProgramID, "pokeball_pos"), active_pokeball_pos.x, active_pokeball_pos.y, active_pokeball_pos.z);
+        glUniform1f(glGetUniformLocation(g_GpuProgramID, "pokeball_radius"), has_active_pokeball ? pb_radius : 0.0f);
+
         glm::vec4 light_dir = glm::vec4(1.0f, 1.0f, 0.0f, 0.0f); 
         float ground_y = -1.095f; 
+
+        glUniform1i(g_is_shadow_uniform, 1); 
+        glDisable(GL_CULL_FACE); 
+
+        // ========================================================
+        // PASSO A: SOMBRAS GLOBAIS (O sol)
+        // ========================================================
+        glUniform1i(glGetUniformLocation(g_GpuProgramID, "shadow_type"), 0);
 
         glm::mat4 S = Matrix_Identity();
         if (light_dir.y != 0.0f) {
@@ -935,11 +962,10 @@ int main(int argc, char* argv[])
             S[3][2] = ground_y * (light_dir.z / light_dir.y);
         }
 
-        glUniform1i(g_is_shadow_uniform, 1); 
-        glDisable(GL_CULL_FACE); 
-
-        // Sombra do treinador
-        glm::mat4 player_model = Matrix_Translate(g_PlayerX, ground_y, g_PlayerZ)
+        // Sombra global do treinador 
+        // Correção de Bug do seu código antigo: Trocado 'ground_y' por 'g_PlayerY'.
+        // Isso faz com que a sombra estique em vez de ficar como um bloco nos pés dele.
+        glm::mat4 player_model = Matrix_Translate(g_PlayerX, g_PlayerY, g_PlayerZ)
                                * Matrix_Rotate_Y(g_AngleY)
                                * Matrix_Scale(0.3f, 0.3f, 0.3f);
         glm::mat4 player_shadow = S * player_model;
@@ -947,9 +973,8 @@ int main(int argc, char* argv[])
         glUniform1i(g_object_id_uniform, TRAINER);
         DrawVirtualObjectByPattern("BASE", TRAINER);
 
-        // Sombra dos objetos
-        for (const auto& obj : g_GameWorld)
-        {
+        // Sombra global dos objetos
+        for (const auto& obj : g_GameWorld) {
             if (obj.object_id == PLANE || obj.object_id == GRASS) continue;
 
             glm::mat4 obj_model = Matrix_Translate(obj.position.x, obj.position.y, obj.position.z)
@@ -962,6 +987,68 @@ int main(int argc, char* argv[])
             glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(obj_shadow));
             glUniform1i(g_object_id_uniform, obj.object_id);
             DrawVirtualObjectByPattern(obj.model_name.c_str(), obj.object_id);
+        }
+
+        // ========================================================
+        // PASSO B: SOMBRAS RADIAIS (A Pokébola)
+        // ========================================================
+        if (has_active_pokeball) {
+            glUniform1i(glGetUniformLocation(g_GpuProgramID, "shadow_type"), 1);
+
+            // Simulamos uma fonte de luz levemente acima do chão para não criar divisões por 0
+            // E garantir que a sombra tenha um limite de esticamento.
+            glm::vec3 pb_light_pos = active_pokeball_pos + glm::vec3(0.0f, 2.0f, 0.0f); 
+
+            // 1. Sombra radial do treinador
+            // (Se ele estiver muito longe, ignoramos para economizar processamento)
+            if (glm::distance(glm::vec2(g_PlayerX, g_PlayerZ), glm::vec2(pb_light_pos.x, pb_light_pos.z)) < pb_radius * 1.5f) {
+                glm::vec4 dir_to_light = glm::vec4(pb_light_pos.x - g_PlayerX, pb_light_pos.y - g_PlayerY, pb_light_pos.z - g_PlayerZ, 0.0f);
+                glm::mat4 S_rad = Matrix_Identity();
+                if (dir_to_light.y != 0.0f) {
+                    S_rad[1][0] = -dir_to_light.x / dir_to_light.y;
+                    S_rad[1][1] = 0.0f;
+                    S_rad[1][2] = -dir_to_light.z / dir_to_light.y;
+                    S_rad[3][0] = ground_y * (dir_to_light.x / dir_to_light.y);
+                    S_rad[3][1] = ground_y;
+                    S_rad[3][2] = ground_y * (dir_to_light.z / dir_to_light.y);
+                }
+                player_shadow = S_rad * player_model;
+                glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(player_shadow));
+                glUniform1i(g_object_id_uniform, TRAINER);
+                DrawVirtualObjectByPattern("BASE", TRAINER);
+            }
+
+            // 2. Sombra radial dos objetos
+            for (const auto& obj : g_GameWorld) {
+                if (obj.object_id == PLANE || obj.object_id == GRASS || obj.is_pokebola) continue;
+
+                // Só desenha se estiver próximo da luz da pokébola (otimização)
+                if (glm::distance(glm::vec2(obj.position.x, obj.position.z), glm::vec2(pb_light_pos.x, pb_light_pos.z)) > pb_radius * 1.5f) continue;
+
+                // O macete mágico: O vetor aponta do objeto PARA a pokebola!
+                glm::vec4 dir_to_light = glm::vec4(pb_light_pos.x - obj.position.x, pb_light_pos.y - obj.position.y, pb_light_pos.z - obj.position.z, 0.0f);
+                
+                glm::mat4 S_rad_obj = Matrix_Identity();
+                if (dir_to_light.y != 0.0f) {
+                    S_rad_obj[1][0] = -dir_to_light.x / dir_to_light.y;
+                    S_rad_obj[1][1] = 0.0f;
+                    S_rad_obj[1][2] = -dir_to_light.z / dir_to_light.y;
+                    S_rad_obj[3][0] = ground_y * (dir_to_light.x / dir_to_light.y);
+                    S_rad_obj[3][1] = ground_y;
+                    S_rad_obj[3][2] = ground_y * (dir_to_light.z / dir_to_light.y);
+                }
+
+                glm::mat4 obj_model = Matrix_Translate(obj.position.x, obj.position.y, obj.position.z)
+                                    * Matrix_Rotate_Y(obj.rotation.y)
+                                    * Matrix_Rotate_X(obj.rotation.x)
+                                    * Matrix_Rotate_Z(obj.rotation.z)
+                                    * Matrix_Scale(obj.scale.x, obj.scale.y, obj.scale.z);
+
+                glm::mat4 obj_shadow = S_rad_obj * obj_model;
+                glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(obj_shadow));
+                glUniform1i(g_object_id_uniform, obj.object_id);
+                DrawVirtualObjectByPattern(obj.model_name.c_str(), obj.object_id);
+            }
         }
 
         glEnable(GL_CULL_FACE);
