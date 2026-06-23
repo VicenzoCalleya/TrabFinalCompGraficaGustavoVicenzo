@@ -50,6 +50,11 @@
 #include "matrices.h"
 #include "collisions.h"
 
+// Constante Pi
+#ifndef M_PI
+const float M_PI = 3.14159265358979323846f;
+#endif
+
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
 struct ObjModel
@@ -239,6 +244,12 @@ bool g_AimMode = false;
 // Variavel para verificar força do aremesso
 float g_RightClickDuration = 0.0f;
 
+// Variavel para ver se está agachado
+bool g_IsCrouching = false;
+
+// Variavel para ver se o jogador está em grama alta
+bool g_IsInHighGrass = false;
+
 // Estados das teclas (false = solta, true = pressionada)
 bool g_W_Pressed = false;
 bool g_A_Pressed = false;
@@ -267,6 +278,11 @@ struct GameObject {
     float live_time;        // Contador de tempo (limite de 5 segundos)
     bool hit_ground;        // Se já colidiu e está estática no chão
     bool is_captured = false; // Foi capturado
+    bool bonus_crouch;      // Se o jogador estava agachado no disparo
+    bool bonus_grass;       // Se o jogador estava na grama no disparo
+    bool is_captured_loop;   // Se está na animação/teste de captura
+    float capture_timer;     // Conta os 5 segundos dentro da bola
+    size_t trapped_poke_idx; // A pokébola guarda qual índice do vetor ela capturou
 };
 // Vetor de objetos do mapa inteiro
 std::vector<GameObject> g_GameWorld;
@@ -781,6 +797,8 @@ int main(int argc, char* argv[])
             pokebola.force             = g_RightClickDuration; 
             pokebola.live_time         = 0.0f;                 // Começa o relógio de 5s
             pokebola.hit_ground        = false;                // Está voando
+            pokebola.bonus_crouch      = g_IsCrouching;
+            pokebola.bonus_grass       = g_IsInHighGrass;
             g_GameWorld.push_back(pokebola);
 
             // Reseta o acumulador para o próximo tiro
@@ -831,12 +849,43 @@ int main(int argc, char* argv[])
                         if (distance_xz < 0.75f && std::abs(obj.position.y - target_center.y) < 3.0f)
                         {
                             // 1. SE FOR POKÉMON -> CAPTURA
-                            if (collider.object_id == CHARMANDER || collider.object_id == SQUIRTLE)
+                            if (collider.object_id == CHARMANDER || collider.object_id == SQUIRTLE || collider.object_id == BULBASAUR)
                             {
-                                g_GameWorld[collider.world_index].is_moving_bezier = false;
-                                g_GameWorld[collider.world_index].is_solid = false;
-                                g_GameWorld[collider.world_index].position.y = -10.0f; // Some com ele
-                                g_GameWorld[collider.world_index].is_captured = true;
+                                auto& pokemon = g_GameWorld[collider.world_index];
+
+                                // --- CÁLCULO DE ACERTO POR TRÁS (DOT PRODUCT) ---
+                                // 1. Vetor de visão do Pokémon (baseado na rotação atual dele na curva)
+                                float angle_rad = pokemon.rotation.y * (M_PI / 180.0f);
+                                glm::vec4 poke_view = glm::vec4(sin(angle_rad), 0.0f, cos(angle_rad), 0.0f);
+                                if (norm(poke_view) > 0.0f) poke_view = poke_view / norm(poke_view);
+
+                                // 2. Vetor de direção da pokébola (apenas XZ)
+                                glm::vec4 ball_dir = glm::vec4(obj.launch_dir.x, 0.0f, obj.launch_dir.z, 0.0f);
+                                if (norm(ball_dir) > 0.0f) ball_dir = ball_dir / norm(ball_dir);
+
+                                // Se o produto escalar for positivo, a bola viajava na mesma direção geral que o Pokémon olhava
+                                float dot = dotproduct(poke_view, ball_dir);
+                                bool bonus_backstab = (dot > 0.2f);
+
+                                // --- CÁLCULO DA CHANCE DE CAPTURA ---
+                                float capture_chance = 0.50f; // 50% Base
+                                if (obj.bonus_crouch)  capture_chance += 0.15f;
+                                if (obj.bonus_grass)   capture_chance += 0.15f;
+                                if (bonus_backstab)    capture_chance += 0.20f;
+
+                                // Roda o dado (gerador de 0.0 a 1.0)
+                                float random_roll = (float)rand() / (float)RAND_MAX;
+                                bool capture_success = (random_roll <= capture_chance);
+
+                                pokemon.is_moving_bezier = false;
+                                pokemon.is_solid = false;
+                                pokemon.position.y = -10.0f; // Some com ele
+                                pokemon.is_captured = true;
+
+                                if(!capture_success){
+                                    pokemon.is_captured_loop = true;
+                                    pokemon.capture_timer = 0.0f;
+                                }
                                 
                                 float pokeball_radius = 1.0f * obj.scale.y;
                                 float ground_y = -1.0f + pokeball_radius;
@@ -907,8 +956,24 @@ int main(int argc, char* argv[])
             }
         }
 
+
+        g_IsInHighGrass = false;
+        for (const auto& obj : g_GameWorld)
+        {
+            if (obj.object_id == GRASS)
+            {
+                float dx = g_PlayerX - obj.position.x;
+                float dz = g_PlayerZ - obj.position.z;
+                float dist = sqrt(dx*dx + dz*dz);
+                
+                if (dist < 0.4f) {
+                    g_IsInHighGrass = true;
+                }
+            }
+        }
+
         // ========================================================
-        // 6. CLEANUP DE POKEBOLAS
+        // 6. CLEANUP DE POKEBOLAS E REAPARECIMENTO DE POKEMONS
         // ========================================================
 
         g_GameWorld.erase(
@@ -918,6 +983,25 @@ int main(int argc, char* argv[])
             }),
         g_GameWorld.end()
         );
+
+        // Loop de verificação de falha de captura
+        for (auto& pokemon : g_GameWorld)
+        {
+            if ((pokemon.object_id == CHARMANDER || pokemon.object_id == SQUIRTLE || pokemon.object_id == BULBASAUR) && pokemon.is_captured_loop)
+            {
+                pokemon.capture_timer += delta_time;
+
+                if (pokemon.capture_timer >= 5.0f)
+                {
+                    // Restaura o Pokémon exatamente onde ele deveria estar na curva de Bézier
+                    pokemon.is_captured = false;
+                    pokemon.is_captured_loop = false;
+                    pokemon.is_moving_bezier = true;
+                    pokemon.is_solid = true;
+                    pokemon.position.y = -1.1f; 
+                }
+            }
+        }
         
         // ========================================================
         // 7. ATUALIZAÇÃO DA CÂMERA (Usa a posição confirmada do jogador)
@@ -2104,6 +2188,17 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     // Controles de mira (E)
     if (key == GLFW_KEY_E && action == GLFW_PRESS){
         g_AimMode = !g_AimMode;
+    }
+
+    if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+    {
+        g_IsCrouching = !g_IsCrouching;
+        
+        if (g_IsCrouching) {
+            g_PlayerY = -1.4f; // Afunda o Y do jogador (ajuste conforme a escala do seu modelo)
+        } else {
+            g_PlayerY = -1.1f; // Volta à altura normal
+        }
     }
     
 }
