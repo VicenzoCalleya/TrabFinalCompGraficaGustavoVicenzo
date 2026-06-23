@@ -29,6 +29,7 @@ uniform mat4 projection;
 #define TREE                7
 #define GRASS               8
 #define POKEBALL            9
+#define SKY                 10
 uniform int object_id;
 uniform int material_id;
 
@@ -52,6 +53,7 @@ uniform sampler2D TextureImage5;
 uniform sampler2D TextureImage6;
 uniform sampler2D TextureImage7;
 uniform sampler2D TextureImage8;
+uniform sampler2D TextureImage9;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -185,6 +187,13 @@ void main()
         V = texcoords.y * 100.0f;
         Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
     }
+    else if ( object_id == SKY )
+    {
+        // Fator de 10.0f para repetir a textura das nuvens pelo plano
+        U = texcoords.x * 10.0f; 
+        V = texcoords.y * 10.0f;
+        Kd0 = texture(TextureImage9, vec2(U,V)).rgb;
+    }
     else if ( object_id == CHARMANDER_EYES )
     {
         // Os olhos do Charmander: pupila + iris
@@ -223,25 +232,33 @@ void main()
             Kd0 = vec3(0.85, 0.85, 0.85);
         }
     }
+    
 
 // Equação de Iluminação
-    float lambert = max(0.0, dot(n,l));
-    vec3 final_color = Kd0 * (lambert + 0.01);
+float lambert = max(0.0, dot(n,l));
+    vec3 final_color;
 
-    // Se houver uma pokébola ativa, ilumina a área ao redor dela
-    if (pokeball_radius > 0.0) {
-        vec3 p_world = position_world.xyz / position_world.w;
-        float dist = distance(p_world.xz, pokeball_pos.xz);
-        
-        // Vetor de luz pontual vindo da pokébola
-        vec3 light_dir_pb = normalize(vec3(pokeball_pos.x, pokeball_pos.y + 1.0, pokeball_pos.z) - p_world);
-        float lambert_pb = max(0.0, dot(n.xyz, light_dir_pb));
-        
-        // Atenuação radial da luz (vai perdendo a força até a borda)
-        float atenuacao = smoothstep(pokeball_radius, 0.0, dist);
-        
-        // Adicionando um brilho à cor base
-        final_color += Kd0 * lambert_pb * atenuacao * 0.8;
+    if (object_id == SKY) {
+        // O céu não é afetado pelas sombras, normals ou luz direcional.
+        final_color = Kd0; 
+    } else {
+        final_color = Kd0 * (lambert + 0.01);
+
+        // Se houver uma pokébola ativa, ilumina a área ao redor dela
+        if (pokeball_radius > 0.0) {
+            vec3 p_world = position_world.xyz / position_world.w;
+            float dist = distance(p_world.xz, pokeball_pos.xz);
+            
+            // Vetor de luz pontual vindo da pokébola
+            vec3 light_dir_pb = normalize(vec3(pokeball_pos.x, pokeball_pos.y + 1.0, pokeball_pos.z) - p_world);
+            float lambert_pb = max(0.0, dot(n.xyz, light_dir_pb));
+            
+            // Atenuação radial da luz
+            float atenuacao = smoothstep(pokeball_radius, 0.0, dist);
+            
+            // Adicionando um brilho à cor base
+            final_color += Kd0 * lambert_pb * atenuacao * 0.8;
+        }
     }
 
     color.rgb = final_color;

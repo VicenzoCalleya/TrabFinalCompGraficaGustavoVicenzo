@@ -292,6 +292,7 @@ std::vector<Collider> g_SceneColliders;
 #define TREE             7
 #define GRASS            8
 #define POKEBALL         9
+#define SKY              10
 
 // Função que coloca todos os objetos no vetor
 void InitializeMap() {
@@ -443,6 +444,18 @@ void InitializeMap() {
         squirtle.is_captured = false;
         g_GameWorld.push_back(grass);
     }
+    GameObject ceu;
+    ceu.model_name = "the_plane"; // Reutilizamos o mesmo .obj do chão
+    ceu.object_id  = SKY;
+    ceu.position   = glm::vec3(0.0f, 30.0f, 0.0f);    // Alto no mapa
+    ceu.scale      = glm::vec3(200.0f, 1.0f, 200.0f); // Tamanho gigante
+    // Rotacionamos 180 graus no eixo X (PI radianos) para a face texturizada olhar para baixo
+    ceu.rotation   = glm::vec3(3.14159265f, 0.0f, 0.0f); 
+    ceu.is_solid   = false;
+    ceu.is_moving_bezier = false;
+    ceu.is_pokebola = false;
+    ceu.is_captured = false;
+    g_GameWorld.push_back(ceu);
 }
 
 int main(int argc, char* argv[])
@@ -528,7 +541,7 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/Trunck.jpg");                  // TextureImage7 (Árvore tronco)
     LoadTextureImage("../../data/Leaves1.jpg");                 // TextureImage8 (Árvore folhas 1)
     LoadTextureImage("../../data/Leaves_2_Cartoon.jpg");        // TextureImage9 (Árvore folhas 2)
-
+    LoadTextureImage("../../data/ceu.jpeg");
     // Carregamento de Modelos
     ObjModel treinadormodel("../../data/treinador.obj");
     ComputeNormals(&treinadormodel);
@@ -1037,7 +1050,7 @@ int main(int argc, char* argv[])
 
         // Sombra global dos objetos
         for (const auto& obj : g_GameWorld) {
-            if (obj.object_id == PLANE || obj.object_id == GRASS) continue;
+            if (obj.object_id == PLANE || obj.object_id == GRASS || obj.object_id == SKY) continue;
             if (obj.is_captured && !obj.is_pokebola) continue;
             glm::mat4 obj_model = Matrix_Translate(obj.position.x, obj.position.y, obj.position.z)
                                 * Matrix_Rotate_Y(obj.rotation.y)
@@ -1082,7 +1095,7 @@ int main(int argc, char* argv[])
 
             // 2. Sombra radial dos objetos
             for (const auto& obj : g_GameWorld) {
-                if (obj.object_id == PLANE || obj.object_id == GRASS || obj.is_pokebola) continue;
+                if (obj.object_id == PLANE || obj.object_id == GRASS || obj.is_pokebola || obj.object_id == SKY) continue;
                 if (obj.is_captured && !obj.is_pokebola) continue;
                 // Só desenha se estiver próximo da luz da pokébola (otimização)
                 if (glm::distance(glm::vec2(obj.position.x, obj.position.z), glm::vec2(pb_light_pos.x, pb_light_pos.z)) > pb_radius * 1.5f) continue;
@@ -1373,6 +1386,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage6"), 6);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage7"), 7);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage8"), 8);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage9"), 9);
     glUseProgram(0);
 }
 
