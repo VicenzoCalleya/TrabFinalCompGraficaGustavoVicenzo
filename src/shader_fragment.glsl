@@ -30,6 +30,8 @@ uniform mat4 projection;
 #define GRASS               8
 #define POKEBALL            9
 #define SKY                 10
+#define BULBASAUR           11
+#define BULBASAUR_EYES      12 
 uniform int object_id;
 uniform int material_id;
 
@@ -54,6 +56,7 @@ uniform sampler2D TextureImage6;
 uniform sampler2D TextureImage7;
 uniform sampler2D TextureImage8;
 uniform sampler2D TextureImage9;
+uniform sampler2D TextureImage10;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -138,6 +141,12 @@ void main()
         U = texcoords.x;
         V = texcoords.y;
         Kd0 = texture(TextureImage2, vec2(U,V)).rgb;
+    }
+    else if ( object_id == BULBASAUR ) // <-- NOVO BLOCO CORPO
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+        Kd0 = texture(TextureImage10, vec2(U,V)).rgb;
     }
     else if ( object_id == TRAINER )
     {
@@ -229,6 +238,19 @@ void main()
             Kd0 = mix(vec3(0.95, 0.95, 0.95), vec3(0.1, 0.1, 0.1), (dist_from_center - 0.08) / 0.22);
         } else {
             // Branco do olho (levemente cinzento)
+            Kd0 = vec3(0.85, 0.85, 0.85);
+        }
+    }
+    else if ( object_id == BULBASAUR_EYES )
+    {
+        vec3 normalized_pos = (position_model.xyz - bbox_min.xyz) / (bbox_max.xyz - bbox_min.xyz);
+        vec2 eye_center = vec2(0.5, 0.5);
+        float dist_from_center = length(normalized_pos.xy - eye_center);
+        if (dist_from_center < 0.08) {
+            Kd0 = vec3(0.02, 0.02, 0.02);
+        } else if (dist_from_center < 0.3) {
+            Kd0 = mix(vec3(0.95, 0.95, 0.95), vec3(0.1, 0.1, 0.1), (dist_from_center - 0.08) / 0.22);
+        } else {
             Kd0 = vec3(0.85, 0.85, 0.85);
         }
     }

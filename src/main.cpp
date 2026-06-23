@@ -293,6 +293,8 @@ std::vector<Collider> g_SceneColliders;
 #define GRASS            8
 #define POKEBALL         9
 #define SKY              10
+#define BULBASAUR           11 
+#define BULBASAUR_EYES      12 
 
 // Função que coloca todos os objetos no vetor
 void InitializeMap() {
@@ -370,24 +372,24 @@ void InitializeMap() {
     squirtle.is_captured = false;           
     g_GameWorld.push_back(squirtle);
 
-    GameObject squirtle2;
-    squirtle2.model_name = "Squirtle"; // Padrão que corresponde a todos os shapes do Squirtle
-    squirtle2.object_id  = SQUIRTLE;
-    squirtle2.position   = glm::vec3(15.0f, -1.05f, 0.0f);
-    squirtle2.scale      = glm::vec3(0.02f, 0.02f, 0.02f);  
-    squirtle2.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
-    squirtle2.is_solid   = true;
-    squirtle2.is_moving_bezier = true;
-    squirtle2.p0           = glm::vec3(-20.0f, -1.05f, -5.0f);   
-    squirtle2.p1           = glm::vec3(-15.0f, -1.05f, -5.0f);  
-    squirtle2.p2           = glm::vec3(10.0f, -1.05f, 5.0f);
-    squirtle2.p3           = glm::vec3(0.0f, -1.05f, -10.0f);
-    squirtle2.t_bezier     = 0.0f;                          
-    squirtle2.speed_bezier = 0.2f;
-    squirtle2.is_returning = false;
-    squirtle2.is_pokebola = false;  
-    squirtle2.is_captured = false;           
-    g_GameWorld.push_back(squirtle2);
+    GameObject bulbasaur;
+    bulbasaur.model_name = "Bulbasaur"; 
+    bulbasaur.object_id  = BULBASAUR;
+    bulbasaur.position   = glm::vec3(15.0f, -1.05f, 0.0f);
+    bulbasaur.scale      = glm::vec3(0.02f, 0.02f, 0.02f);  
+    bulbasaur.rotation   = glm::vec3(0.0f, 0.0f, 0.0f);
+    bulbasaur.is_solid   = true;
+    bulbasaur.is_moving_bezier = true;
+    bulbasaur.p0           = glm::vec3(-20.0f, -1.05f, -5.0f);   
+    bulbasaur.p1           = glm::vec3(-15.0f, -1.05f, -5.0f);  
+    bulbasaur.p2           = glm::vec3(10.0f, -1.05f, 5.0f);
+    bulbasaur.p3           = glm::vec3(0.0f, -1.05f, -10.0f);
+    bulbasaur.t_bezier     = 0.0f;                          
+    bulbasaur.speed_bezier = 0.2f;
+    bulbasaur.is_returning = false;
+    bulbasaur.is_pokebola = false;  
+    bulbasaur.is_captured = false;           
+    g_GameWorld.push_back(bulbasaur);
 
 
     // 4. Árvores naturais
@@ -542,6 +544,7 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/Leaves1.jpg");                 // TextureImage8 (Árvore folhas 1)
     LoadTextureImage("../../data/Leaves_2_Cartoon.jpg");        // TextureImage9 (Árvore folhas 2)
     LoadTextureImage("../../data/ceu.jpeg");
+    LoadTextureImage("../../data/Bulbasaur_BaseColor_1001.jpg");
     // Carregamento de Modelos
     ObjModel treinadormodel("../../data/treinador.obj");
     ComputeNormals(&treinadormodel);
@@ -557,6 +560,10 @@ int main(int argc, char* argv[])
     ObjModel squirtlemodel("../../data/Squirtle_v01.obj");
     ComputeNormals(&squirtlemodel);
     BuildTrianglesAndAddToVirtualScene(&squirtlemodel);
+
+    ObjModel bulbasaurmodel("../../data/Bulbasaur_v01.obj"); 
+    ComputeNormals(&bulbasaurmodel);                         
+    BuildTrianglesAndAddToVirtualScene(&bulbasaurmodel);
 
     ObjModel treemodel("../../data/Arvore.obj");
     ComputeNormals(&treemodel);
@@ -1264,6 +1271,8 @@ void DrawVirtualObjectByPattern(const char* pattern, int base_object_id)
                     object_id_to_use = CHARMANDER_EYES;
                 } else if (pattern_str.find("Squirtle") != std::string::npos) {
                     object_id_to_use = SQUIRTLE_EYES;
+                } else if (pattern_str.find("Bulbasaur") != std::string::npos) { 
+                    object_id_to_use = BULBASAUR_EYES;
                 }
             }
             else if (name.find("BASE1") != std::string::npos) {
@@ -1387,6 +1396,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage7"), 7);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage8"), 8);
     glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage9"), 9);
+    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage10"), 10);
     glUseProgram(0);
 }
 
