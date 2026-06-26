@@ -6,7 +6,7 @@ PROMPT 1:
 
 Use o arquivo x.obj e sua respectiva textura, para substituir o modelo y do projeto (modelo que está como placeholder). Leia as informaçẽos do .obj.
 
-* Citações aos obj e texturas dos objetos na main e no shader fragment, foram geradas assim *
+## Citações aos obj e texturas dos objetos na main e no shader fragment, foram geradas assim
 
 PROMPT 2:
 
