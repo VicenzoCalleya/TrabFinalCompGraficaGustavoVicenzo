@@ -6,17 +6,17 @@ https://moodle.ufrgs.br/mod/assign/view.php?id=6018620
 
 A aplicação desenvolvida:
 
-Temos um humano, algumas árvores, algumas gramas altas, e alguns pegamons. O humano é nosso treinador pegamon, visto em terceira pessoa. Seu movimento é controlado pelo usuário, tal como seu modo mira. Em seu modo mira, tem a câmera modificada, e pode arremessar uma pegabola, segurando e soltando o botão direito do mouse. Com a força do arremesso ficando maior de maneira proporcional ao tempo segurando o botão antes de soltar. Se a pegabola acerta o chão, ela se choca com ele, e some após alguns segundos. Se a pegabola acerta um pegamon, temos uma captura. A captura consiste no pegamon indo para a pegabola (use sua imaginação), e então a pegabola no chão emitindo luz, até desaparecer. Todos os objetos (com excessão da grama) tem sombras, seja da luz de cima, ou da luz das capturas de pegamons. Todos os objetos (com excessão da grama) tem colisão. Os pegamons se movem em animações simples, em curva, aguardando para continuar seu caminho se algo interrompê-los. A iluminação é difusa, com sombras pretas e "duras". Na captura, a pegabola cancela as sombras geradas pela luz de cima, e gera suas proprias sombras nos objetos em um raio próximo. As animações dos pegamons se movendo são curvas de Bézier. Os pegamons, o jogador e as árvores, tem suas respectivas texturas. A pegabola arremessada, viaja em função do tempo. 
+Temos um humano, algumas árvores, algumas gramas altas, e alguns pegamons. O humano é nosso treinador pegamon, visto em terceira pessoa. Seu movimento é controlado pelo usuário, tal como seu modo mira. Em seu modo mira, tem a câmera modificada, e pode arremessar uma pegabola, segurando e soltando o botão direito do mouse. Com a força do arremesso ficando maior de maneira proporcional ao tempo segurando o botão antes de soltar. Se a pegabola acerta o chão, ela se choca com ele, e some após alguns segundos. Se a pegabola acerta um pegamon, temos uma captura. A captura consiste no pegamon indo para a pegabola (use sua imaginação), e então a pegabola no chão emitindo luz, até desaparecer. Todos os objetos (com excessão da grama) tem sombras, seja da luz de cima, ou da luz das capturas de pegamons. Todos os objetos (com excessão da grama) tem colisão. Os pegamons se movem em animações simples, em curva, aguardando para continuar seu caminho se algo interrompê-los. A iluminação é difusa, com sombras pretas e "duras". Na captura, a pegabola cancela as sombras geradas pela luz de cima, e gera suas proprias sombras nos objetos em um raio próximo. As animações dos pegamons se movendo são curvas de Bézier. Os pegamons, o jogador e as árvores tem suas respectivas texturas. A pegabola arremessada viaja em função do tempo. 
 
 Contribuições:
 
-Eu, Gustavo, fiquei responsável por encontrar modelos na internet que satisfazem nossas necessidades, tal como implementá-los. Fiquei responsável também por implementar a iluminação de cima e a iluminação da captura. E sou o responsável por escrever esse relatório. Já meu colega, Vicenzo, foi o responsável pelas animações dos pegamons, pela animação e implementação da pegabola no ar e da captura dos pegamons, e também pelas colisões entre objetos.
+Eu, Gustavo, fiquei responsável por encontrar modelos na internet que satisfazem nossas necessidades, tal como implementá-los. Fiquei responsável também por implementar a iluminação de cima e a iluminação da captura. E sou o responsável por escrever esse relatório. Já meu colega, Vicenzo, foi o responsável pelas animações dos pegamons, pela animação e implementação da pegabola no ar e da captura dos pegamons, movimentação do jogador e também pelas colisões entre objetos.
 
 Sobre o uso de IA:
 
 Usei Gemini e o Claude integrado ao Visual Studio Code durante a totalidade da minha parte no projeto, fazendo meus próprios ajustes e correções. Achei muito útil o uso dessas ferramentas. Tive que ativamente sugerir ideias de como fazer, para além de simplesmente pedir que seja feito, então ao menos os agentes que usei, certamente não seriam tão úteis para um usuário leigo. Também me vi corrigindo bugs durante boa parte do projeto, o que apesar de provavelmente não ter me consumido mais tempo do que me consumiria fazer o código do zero, foi um bom bocado de tempo. Também vale dizer que durante todo o processo, os modelos sugeriam mudanças sem sentido, ou que quebravam o código, o que me obrigava a corrigir o que os modelos diziam ou implementar e ver só depois o que tinha de errado.
 
-* espaço para o Vicenzo deixar seu relato *
+Eu (Vicenzo) usei principalmente Gemini para o auxílio do trabalho, contribuindo principalmente em estabelecer colisões, me auxiliando na fórmula de Bézier para movimento dos pokémons, no aremesso da pokebola e parcialmente me ajudar na mecânica de falha de captura. Ela foi muito útil no início, desenvolvendo uma base muito sólida para projeto, mas conforme mais tempo se passava, mais sugestões ela dava que quebrava o código por não considerar uma parte dele que já estava implementada, ou sugeria soluções complicadas para problemas simples, e me vi corrigindo muitos desses erros no final do trabalho.
 
 Imagens:
 
@@ -26,7 +26,7 @@ Imagens:
 
 Manual:
 
-Você move o personagem com "WASD". Move a câmera com o botão esquerdo do mouse e o scroll. Entra no modo de mira apertando a letra  "E" e nesse modo pode segurar o botão direito do mouse e soltar quando achar que vai ser um arremesso com força o suficiente.
+Você move o personagem com "WASD". Move a câmera com o botão esquerdo do mouse e o scroll. Entra no modo de mira apertando a letra  "E" e nesse modo pode segurar o botão direito do mouse e soltar quando achar que vai ser um arremesso com força o suficiente, causando um lançamento de pokebola. Você também pode se agachar e levantar com a tecla Q.
 
 Como compilar (usando a explicação do seu arquivo do Lab 2):
 
